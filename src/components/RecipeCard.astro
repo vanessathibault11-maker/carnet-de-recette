@@ -1,0 +1,146 @@
+---
+// Carte-recette — fiche d'INFO (pas de placeholder visuel).
+// L'espace sert à décider quoi cuisiner : temps, portions, coût/personne,
+// protéines + calories, et les repères (enfants, congèle). La couleur de
+// catégorie reste en accent (barre latérale + étiquette). Toute la carte
+// est un lien vers la page-recette.
+import { getCategorie } from '../lib/categories';
+import { formaterCout, formaterTemps } from '../lib/format';
+
+export interface Props {
+  slug: string;
+  titre: string;
+  categorie: string;
+  temps_total: number;
+  portions: number;
+  cout_par_portion: number;
+  proteines?: number;
+  calories?: number;
+  aime_des_enfants: boolean;
+  se_congele: boolean;
+}
+
+const {
+  slug,
+  titre,
+  categorie,
+  temps_total,
+  portions,
+  cout_par_portion,
+  proteines,
+  calories,
+  aime_des_enfants,
+  se_congele,
+} = Astro.props;
+
+const cat = getCategorie(categorie);
+---
+
+<a
+  href={`/recettes/${slug}/`}
+  class="carte"
+  style={`--cat:${cat.couleur}; --catxt:${cat.texteSur};`}
+>
+  <span class="carte__tag mono">{cat.label}</span>
+  <h3 class="carte__titre">{titre}</h3>
+
+  <div class="carte__faits">
+    <div class="carte__ligne mono">
+      <span class="carte__temps">⏱ {formaterTemps(temps_total)}</span>
+      <span>🍽 {portions} portions</span>
+    </div>
+    <div class="carte__ligne mono">
+      <span class="carte__cout">💲 {formaterCout(cout_par_portion)}/pers</span>
+      {
+        proteines != null && (
+          <span>🍗 {proteines} g{calories != null && ` · ${calories} kcal`}</span>
+        )
+      }
+    </div>
+  </div>
+
+  <div class="carte__badges">
+    {aime_des_enfants && <span class="carte__badge">👶 Aimé des enfants</span>}
+    {se_congele && <span class="carte__badge">❄️ Se congèle</span>}
+  </div>
+</a>
+
+<style>
+  .carte {
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-left: 5px solid var(--cat);
+    border-radius: var(--rayon);
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  }
+  .carte:hover,
+  .carte:focus-visible {
+    box-shadow: var(--ombre);
+    transform: translateY(-2px);
+  }
+
+  .carte__tag {
+    align-self: flex-start;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: var(--cat);
+    color: var(--catxt);
+    padding: 4px 11px;
+    border-radius: 999px;
+  }
+  .carte__titre {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--vert);
+    margin: 0;
+    line-height: 1.18;
+  }
+
+  .carte__faits {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-block: 1px solid var(--bordure);
+    padding-block: 14px;
+    margin-top: auto;
+  }
+  .carte__ligne {
+    display: flex;
+    align-items: center;
+    gap: 8px 16px;
+    flex-wrap: wrap;
+    font-size: 14px;
+    color: var(--charbon);
+  }
+  .carte__temps {
+    color: var(--vert);
+    font-weight: 500;
+  }
+  .carte__cout {
+    color: var(--bleu-gris);
+    font-weight: 500;
+  }
+
+  .carte__badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .carte__badge {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--creme);
+    border: 1px solid var(--bordure);
+    border-radius: 999px;
+    padding: 5px 11px;
+  }
+</style>

@@ -1,0 +1,218 @@
+---
+import { CATEGORIES } from '../lib/categories';
+---
+
+<header class="entete" data-entete>
+  <div class="contenu entete__inner">
+    <a href="/" class="entete__logo" aria-label="Le carnet de recettes — accueil">
+      <span class="entete__sceau" aria-hidden="true">
+        <svg viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="20" r="18.5" stroke="currentColor" stroke-width="1.5" />
+          <path
+            d="M20 30 C20 22 20 16 20 11"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+          />
+          <path
+            d="M20 20 C15 20 12 17 11.5 12.5 C16 12.5 19.5 15 20 20 Z M20 17 C25 17 28 14 28.5 9.5 C24 9.5 20.5 12 20 17 Z"
+            fill="currentColor"
+          />
+        </svg>
+      </span>
+      <span class="entete__marque">Le carnet de recettes</span>
+    </a>
+
+    <button
+      type="button"
+      class="entete__burger"
+      aria-label="Ouvrir le menu"
+      aria-expanded="false"
+      aria-controls="menu-principal"
+      data-burger
+    >
+      <span class="entete__burger-ligne"></span>
+      <span class="entete__burger-ligne"></span>
+      <span class="entete__burger-ligne"></span>
+    </button>
+
+    <nav id="menu-principal" class="entete__nav" aria-label="Navigation principale">
+      <a href="/recettes/">Recettes</a>
+      {
+        CATEGORIES.map((c) => (
+          <a href={`/categories/${c.slug}/`}>{c.label}</a>
+        ))
+      }
+      <a href="/blog/">Blogue</a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .entete {
+    background: var(--creme);
+    border-bottom: 1px solid var(--bordure);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .entete__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 14px;
+    flex-wrap: wrap;
+  }
+  .entete__logo {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .entete__sceau {
+    display: inline-flex;
+    width: 34px;
+    height: 34px;
+    color: var(--vert);
+    flex-shrink: 0;
+  }
+  .entete__sceau svg {
+    width: 100%;
+    height: 100%;
+  }
+  .entete__marque {
+    font-family: var(--serif);
+    font-size: 1.3rem;
+    color: var(--vert);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .entete__nav {
+    display: flex;
+    gap: 4px 20px;
+    flex-wrap: wrap;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .entete__nav a {
+    color: var(--charbon);
+    text-decoration: none;
+    padding: 4px 2px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .entete__nav a:hover {
+    color: var(--vert);
+    border-bottom-color: var(--terracotta);
+  }
+
+  /* Bouton hamburger — masqué sur desktop, révélé sous 760px. */
+  .entete__burger {
+    display: none;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+  .entete__burger-ligne {
+    width: 24px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--charbon);
+    transition: transform 0.22s ease, opacity 0.22s ease;
+  }
+
+  @media (max-width: 760px) {
+    /* Barre = logo + hamburger sur une rangée ; la nav tombe dessous. */
+    .entete__inner {
+      gap: 0 16px;
+    }
+    .entete__burger {
+      display: flex;
+    }
+    .entete__marque {
+      font-size: 1.2rem;
+    }
+
+    /* Nav repliable, pleine largeur, en colonne. */
+    .entete__nav {
+      flex-basis: 100%;
+      width: 100%;
+      flex-direction: column;
+      gap: 0;
+      max-height: 0;
+      visibility: hidden;
+      overflow: hidden;
+      transition: max-height 0.26s ease, visibility 0.26s ease;
+    }
+    .entete.est-ouvert .entete__nav {
+      max-height: 75vh;
+      visibility: visible;
+      padding-top: 6px;
+    }
+    .entete__nav a {
+      padding: 12px 2px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid var(--bordure);
+    }
+    .entete__nav a:last-child {
+      border-bottom: none;
+    }
+
+    /* Hamburger → croix quand ouvert. */
+    .entete.est-ouvert .entete__burger-ligne:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+    .entete.est-ouvert .entete__burger-ligne:nth-child(2) {
+      opacity: 0;
+    }
+    .entete.est-ouvert .entete__burger-ligne:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .entete__nav,
+    .entete__burger-ligne {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  const header = document.querySelector<HTMLElement>('[data-entete]');
+  const burger = document.querySelector<HTMLButtonElement>('[data-burger]');
+  const nav = document.getElementById('menu-principal');
+
+  if (header && burger) {
+    const setOpen = (open: boolean) => {
+      header.classList.toggle('est-ouvert', open);
+      burger.setAttribute('aria-expanded', String(open));
+      burger.setAttribute('aria-label', open ? 'Fermer le menu' : 'Ouvrir le menu');
+    };
+
+    burger.addEventListener('click', () => {
+      setOpen(burger.getAttribute('aria-expanded') !== 'true');
+    });
+
+    // Cliquer un lien ferme le menu (ancres, retour perçu instantané).
+    nav?.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('a')) setOpen(false);
+    });
+
+    // Échap ferme.
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  }
+</script>

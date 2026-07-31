@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <title>Bol de lentilles</title>
+  <path d="M22 52h56a28 20 0 0 1-56 0z" />
+  <path d="M18 52h64" />
+  <g fill="currentColor" stroke="none">
+    <circle cx="40" cy="44" r="3" /><circle cx="52" cy="40" r="3" /><circle cx="63" cy="45" r="3" />
+    <circle cx="46" cy="48" r="3" /><circle cx="58" cy="48" r="3" />
+  </g>
+</svg>

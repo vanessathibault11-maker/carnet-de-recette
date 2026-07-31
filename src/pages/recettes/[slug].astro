@@ -1,0 +1,495 @@
+---
+import { getCollection } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import VisuelRecette from '../../components/VisuelRecette.astro';
+import FaitsRapides from '../../components/FaitsRapides.astro';
+import { getCategorie } from '../../lib/categories';
+import { formaterCout, inlineGras } from '../../lib/format';
+import { baliserIngredient } from '../../lib/quantites';
+import { extraireSections, construireRecipeJsonLd } from '../../lib/recetteSchema';
+
+export async function getStaticPaths() {
+  const recettes = await getCollection('recettes');
+  return recettes.map((r) => ({ params: { slug: r.id }, props: { recette: r } }));
+}
+
+const { recette } = Astro.props as { recette: CollectionEntry<'recettes'> };
+const d = recette.data;
+const cat = getCategorie(d.categorie);
+const sections = extraireSections(recette.body ?? '');
+
+// Visuel autonome déposé par le skill `generateur-visuel-recette` dans
+// src/visuels/. On charge tous les SVG à la construction (contenu brut), puis on
+// prend celui qui correspond — soit le champ `visuel` du frontmatter, soit, par
+// défaut, src/visuels/<slug>.svg. Absent → VisuelRecette retombe sur la banque.
+const svgFichiers = import.meta.glob<string>('../../visuels/*.svg', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+const nomVisuel = (d.visuel ?? recette.id).replace(/\.svg$/, '');
+const visuelSvg = svgFichiers[`../../visuels/${nomVisuel}.svg`];
+
+const urlPage = new URL(`/recettes/${recette.id}/`, Astro.site).href;
+const jsonLd = construireRecipeJsonLd(d, sections, urlPage);
+---
+
+<BaseLayout titre={d.titre} description={sections.intro} jsonLd={jsonLd}>
+  <article class="recette">
+    {
+      /* Visuel affiché UNIQUEMENT si un vrai SVG maison existe pour la recette
+         (src/visuels/<slug>.svg). Sinon : aucun placeholder — on démarre direct
+         sur l'info utile. */
+      visuelSvg && (
+        <div class="recette__hero" style={`--accent:${cat.couleur}`}>
+          <VisuelRecette
+            categorie={d.categorie}
+            illustration={d.illustration}
+            visuel={visuelSvg}
+            titre={d.titre}
+            hauteur="clamp(220px, 34vw, 320px)"
+            hero
+          />
+        </div>
+      )
+    }
+
+    <div class="contenu recette__corps">
+      <nav class="miette mono" aria-label="Fil d'Ariane">
+        <a href="/recettes/">Recettes</a>
+        <span aria-hidden="true">/</span>
+        <a href={`/categories/${cat.slug}/`}>{cat.label}</a>
+      </nav>
+
+      <span
+        class="recette__tag mono"
+        style={`--cat:${cat.couleur}; --catxt:${cat.texteSur};`}
+      >
+        {cat.label}
+      </span>
+      <h1>{d.titre}</h1>
+      {sections.intro && <p class="recette__intro">{sections.intro}</p>}
+
+      <FaitsRapides
+        temps_total={d.temps_total}
+        temps_prep={d.temps_prep}
+        temps_cuisson={d.temps_cuisson}
+        portions={d.portions}
+        cout_par_portion={d.cout_par_portion}
+        aime_des_enfants={d.aime_des_enfants}
+        se_congele={d.se_congele}
+      />
+
+      <!-- Mode cuisine : garde l'écran allumé (révélé par JS si l'appareil le
+           supporte). Désactivé par défaut — l'utilisatrice choisit. -->
+      <div class="mode-cuisine" data-wakelock hidden>
+        <button
+          type="button"
+          class="cuisine-switch"
+          role="switch"
+          aria-checked="false"
+          data-wakelock-toggle
+        >
+          <span class="cuisine-switch__label">
+            <span aria-hidden="true">🔆</span> Garder l'écran allumé
+          </span>
+          <span class="cuisine-switch__track" aria-hidden="true">
+            <span class="cuisine-switch__thumb"></span>
+          </span>
+        </button>
+        <p class="cuisine-switch__aide mono">Pratique en cuisinant — l'écran ne s'éteint pas.</p>
+      </div>
+
+      <!-- Colonnes Ingrédients + Préparation -->
+      <div class="recette__colonnes">
+        <section class="bloc-ingredients" aria-labelledby="t-ingredients">
+          <h2 id="t-ingredients">Ingrédients</h2>
+          <p class="astuce mono">Coche au fur et à mesure · les quantités suivent les portions</p>
+          <ul class="ingredients" data-slug={recette.id} role="list">
+            {
+              sections.ingredients.map((ing, i) => (
+                <li class="ingredients__item">
+                  <label>
+                    <input type="checkbox" data-index={i} class="ingredients__case" />
+                    <span class="ingredients__texte" set:html={baliserIngredient(ing)} />
+                  </label>
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+
+        <section class="bloc-preparation" aria-labelledby="t-preparation">
+          <h2 id="t-preparation">Préparation</h2>
+          <ol class="etapes">
+            {sections.etapes.map((etape) => <li class="etapes__item">{etape}</li>)}
+          </ol>
+        </section>
+      </div>
+
+      <!-- Macros (discret) -->
+      <section class="macros" aria-labelledby="t-macros">
+        <h2 id="t-macros" class="macros__titre">Valeurs nutritives <span>· par portion, approximatif</span></h2>
+        <dl class="macros__grille">
+          <div><dt>Calories</dt><dd>{d.macros.calories}</dd></div>
+          <div><dt>Protéines</dt><dd>{d.macros.proteines} g</dd></div>
+          <div><dt>Glucides</dt><dd>{d.macros.glucides} g</dd></div>
+          <div><dt>Lipides</dt><dd>{d.macros.lipides} g</dd></div>
+        </dl>
+      </section>
+
+      <!-- Notes -->
+      {
+        sections.notes.length > 0 && (
+          <section class="notes" aria-labelledby="t-notes">
+            <h2 id="t-notes">Notes</h2>
+            <ul class="notes__liste">
+              {sections.notes.map((n) => <li set:html={inlineGras(n)} />)}
+            </ul>
+          </section>
+        )
+      }
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .recette__hero {
+    border-bottom: 4px solid var(--accent);
+  }
+  .recette__corps {
+    max-width: 900px;
+    padding-block: clamp(2rem, 5vw, 3rem);
+  }
+  .recette__tag {
+    display: inline-block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: var(--cat);
+    color: var(--catxt);
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .miette {
+    font-size: 13px;
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .miette a {
+    text-decoration: none;
+    color: var(--gris-texte);
+  }
+  .miette a:hover {
+    color: var(--vert);
+  }
+  .recette__intro {
+    font-size: 1.1rem;
+    color: var(--gris-texte);
+    max-width: 60ch;
+    margin-bottom: 28px;
+  }
+
+  .mode-cuisine {
+    margin-top: 16px;
+  }
+  .cuisine-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: 999px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--charbon);
+  }
+  .cuisine-switch__track {
+    position: relative;
+    width: 42px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--gris-doux);
+    transition: background 0.18s ease;
+    flex-shrink: 0;
+  }
+  .cuisine-switch__thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: var(--ombre-douce);
+    transition: transform 0.18s ease;
+  }
+  .cuisine-switch[aria-checked='true'] .cuisine-switch__track {
+    background: var(--vert);
+  }
+  .cuisine-switch[aria-checked='true'] .cuisine-switch__thumb {
+    transform: translateX(18px);
+  }
+  .cuisine-switch__aide {
+    font-size: 12px;
+    color: var(--gris-texte);
+    margin: 8px 0 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cuisine-switch__track,
+    .cuisine-switch__thumb {
+      transition: none;
+    }
+  }
+
+  .recette__colonnes {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 40px;
+    margin-top: 40px;
+  }
+  .astuce {
+    font-size: 12px;
+    color: var(--gris-texte);
+    margin: -6px 0 14px;
+  }
+
+  .ingredients {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .ingredients__item label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--rayon);
+    cursor: pointer;
+  }
+  .ingredients__item label:hover {
+    background: #f5efe4;
+  }
+  .ingredients__case {
+    margin-top: 4px;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--vert);
+    flex-shrink: 0;
+  }
+  .ingredients__texte :global(.qte) {
+    font-family: var(--mono);
+    font-weight: 500;
+    color: var(--vert);
+  }
+  .ingredients__item.coche .ingredients__texte {
+    text-decoration: line-through;
+    color: var(--gris-texte);
+    opacity: 0.7;
+  }
+
+  .etapes {
+    margin: 0;
+    padding-left: 1.2em;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .etapes__item {
+    padding-left: 6px;
+    line-height: 1.6;
+  }
+  .etapes__item::marker {
+    font-family: var(--mono);
+    color: var(--terracotta-fonce);
+    font-weight: 500;
+  }
+
+  .macros {
+    margin-top: 44px;
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: var(--rayon);
+    padding: 22px;
+  }
+  .macros__titre {
+    font-size: 1.1rem;
+    margin: 0 0 16px;
+  }
+  .macros__titre span {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gris-texte);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .macros__grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 16px;
+    margin: 0;
+  }
+  .macros__grille dt {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gris-texte);
+  }
+  .macros__grille dd {
+    margin: 2px 0 0;
+    font-family: var(--serif);
+    font-size: 1.5rem;
+    color: var(--vert);
+  }
+
+  .notes {
+    margin-top: 44px;
+  }
+  .notes__liste {
+    padding-left: 1.2em;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    color: var(--charbon);
+  }
+  .notes__liste :global(strong) {
+    color: var(--vert);
+  }
+
+  @media (max-width: 720px) {
+    .recette__colonnes {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+  }
+</style>
+
+<script>
+  import { formatQuantite } from '../../lib/quantites';
+
+  // 1) Sélecteur de portions : recalcule les quantités des ingrédients.
+  const spanPortions = document.querySelector<HTMLElement>('[data-portions]');
+  const base = Number(spanPortions?.dataset.basePortions ?? 0);
+  const btnMoins = document.querySelector<HTMLButtonElement>('[data-portions-moins]');
+  const btnPlus = document.querySelector<HTMLButtonElement>('[data-portions-plus]');
+  const quantites = Array.from(document.querySelectorAll<HTMLElement>('.qte'));
+
+  if (spanPortions && base > 0) {
+    let courant = base;
+    const maj = () => {
+      spanPortions.textContent = String(courant);
+      const ratio = courant / base;
+      for (const el of quantites) {
+        const b = Number(el.dataset.base);
+        if (!isNaN(b)) el.textContent = formatQuantite(b * ratio);
+      }
+      if (btnMoins) btnMoins.disabled = courant <= 1;
+    };
+    btnPlus?.addEventListener('click', () => {
+      courant++;
+      maj();
+    });
+    btnMoins?.addEventListener('click', () => {
+      if (courant > 1) {
+        courant--;
+        maj();
+      }
+    });
+    maj();
+  }
+
+  // 2) Ingrédients cochables — mémorisés par recette (slug), pas par position.
+  const liste = document.querySelector<HTMLElement>('.ingredients');
+  const slug = liste?.dataset.slug;
+  if (liste && slug) {
+    const cle = `carnet:coche:${slug}`;
+    let coches: number[] = [];
+    try {
+      coches = JSON.parse(localStorage.getItem(cle) ?? '[]');
+      if (!Array.isArray(coches)) coches = [];
+    } catch {
+      coches = [];
+    }
+
+    const cases = Array.from(
+      liste.querySelectorAll<HTMLInputElement>('.ingredients__case')
+    );
+    for (const c of cases) {
+      const idx = Number(c.dataset.index);
+      if (coches.includes(idx)) {
+        c.checked = true;
+        c.closest('.ingredients__item')?.classList.add('coche');
+      }
+      c.addEventListener('change', () => {
+        c.closest('.ingredients__item')?.classList.toggle('coche', c.checked);
+        const actifs = cases
+          .filter((x) => x.checked)
+          .map((x) => Number(x.dataset.index));
+        try {
+          localStorage.setItem(cle, JSON.stringify(actifs));
+        } catch {
+          /* stockage indisponible : on ignore, l'app reste fonctionnelle */
+        }
+      });
+    }
+  }
+</script>
+
+<script>
+  // 3) Mode cuisine — garde l'écran allumé (Screen Wake Lock API).
+  //    Le contrôle n'apparaît que si l'appareil supporte l'API. Désactivé par
+  //    défaut : l'utilisatrice l'active elle-même (transparence + batterie).
+  const zone = document.querySelector<HTMLElement>('[data-wakelock]');
+  const bascule = document.querySelector<HTMLButtonElement>('[data-wakelock-toggle]');
+
+  if (zone && bascule && 'wakeLock' in navigator) {
+    zone.hidden = false;
+    let verrou: WakeLockSentinel | null = null;
+    let actif = false;
+
+    const acquerir = async () => {
+      try {
+        verrou = await navigator.wakeLock.request('screen');
+        // Si le système relâche le verrou (ex. batterie faible), on suit l'état.
+        verrou.addEventListener('release', () => {
+          verrou = null;
+        });
+      } catch {
+        /* Refusé (batterie faible, onglet caché…) : on n'insiste pas. */
+      }
+    };
+
+    const relacher = async () => {
+      try {
+        await verrou?.release();
+      } catch {
+        /* déjà relâché */
+      }
+      verrou = null;
+    };
+
+    bascule.addEventListener('click', async () => {
+      actif = !actif;
+      bascule.setAttribute('aria-checked', String(actif));
+      if (actif) await acquerir();
+      else await relacher();
+    });
+
+    // Le verrou saute quand l'onglet passe en arrière-plan : on le reprend au retour.
+    document.addEventListener('visibilitychange', async () => {
+      if (actif && document.visibilityState === 'visible' && !verrou) {
+        await acquerir();
+      }
+    });
+  }
+</script>

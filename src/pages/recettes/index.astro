@@ -1,0 +1,49 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FiltresCategorie from '../../components/FiltresCategorie.astro';
+import ItemRecette from '../../components/ItemRecette.astro';
+
+const recettes = (await getCollection('recettes')).sort(
+  (a, b) => a.data.temps_total - b.data.temps_total
+);
+---
+
+<BaseLayout
+  titre="Toutes les recettes"
+  description="Toutes nos recettes familiales : filtre par temps, coût par portion et « aimé des enfants » pour trouver le souper de ce soir."
+>
+  <section class="section">
+    <div class="contenu">
+      <header class="tete">
+        <p class="mono surtitre">Le carnet</p>
+        <h1>Toutes les recettes</h1>
+        <p class="tete__intro">
+          Filtre par temps, par coût ou garde seulement ce que les enfants
+          aiment. Le temps total est toujours affiché en premier.
+        </p>
+      </header>
+
+      <FiltresCategorie total={recettes.length}>
+        {recettes.map((r) => <ItemRecette recette={r} />)}
+      </FiltresCategorie>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .tete {
+    margin-bottom: 30px;
+  }
+  .surtitre {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    color: var(--terracotta-fonce);
+    margin: 0 0 8px;
+  }
+  .tete__intro {
+    max-width: 52ch;
+    color: var(--gris-texte);
+  }
+</style>

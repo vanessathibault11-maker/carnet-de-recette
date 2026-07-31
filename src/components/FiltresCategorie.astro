@@ -1,0 +1,197 @@
+---
+// Filtres client (temps / coût / aimé des enfants) appliqués à une grille de
+// recettes. La grille est passée en `slot` : chaque élément doit être un
+// <li data-recette data-temps="45" data-cout="3.25" data-enfants="true">…</li>.
+// Aucun rechargement : on montre/masque les cartes en place.
+const { total } = Astro.props as { total: number };
+---
+
+<section class="filtrable" aria-label="Recettes filtrables">
+  <form class="filtres" aria-label="Filtrer les recettes">
+    <div class="filtre">
+      <label for="f-temps">Temps max</label>
+      <select id="f-temps" data-f-temps>
+        <option value="0">Tous</option>
+        <option value="20">20 min ou moins</option>
+        <option value="30">30 min ou moins</option>
+        <option value="45">45 min ou moins</option>
+      </select>
+    </div>
+
+    <div class="filtre">
+      <label for="f-cout">Coût / portion max</label>
+      <select id="f-cout" data-f-cout>
+        <option value="0">Tous</option>
+        <option value="2">2 $ ou moins</option>
+        <option value="3">3 $ ou moins</option>
+        <option value="5">5 $ ou moins</option>
+      </select>
+    </div>
+
+    <div class="filtre filtre--case">
+      <input type="checkbox" id="f-enfants" data-f-enfants />
+      <label for="f-enfants">Aimé des enfants</label>
+    </div>
+
+    <p class="filtres__compte" data-compte aria-live="polite">{total} recettes</p>
+    <button type="button" class="filtres__reset" data-reset hidden>
+      Réinitialiser
+    </button>
+  </form>
+
+  <ul class="grille-recettes filtrable__grille" role="list">
+    <slot />
+  </ul>
+
+  <div class="filtrable__vide" data-vide hidden>
+    <p>Aucune recette ne correspond à ces filtres.</p>
+    <button type="button" class="bouton bouton--ligne" data-reset>
+      Réinitialiser les filtres
+    </button>
+  </div>
+</section>
+
+<style>
+  .filtres {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px 20px;
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: var(--rayon);
+    padding: 16px 18px;
+    margin-bottom: 26px;
+  }
+  .filtre {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .filtre label {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gris-texte);
+  }
+  .filtre select {
+    font-family: var(--sans);
+    font-size: 14px;
+    padding: 8px 10px;
+    border: 1px solid var(--bordure);
+    border-radius: var(--rayon);
+    background: var(--creme);
+    color: var(--charbon);
+  }
+  .filtre--case {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+  .filtre--case label {
+    text-transform: none;
+    font-family: var(--sans);
+    font-size: 14px;
+    letter-spacing: 0;
+    color: var(--charbon);
+  }
+  .filtre--case input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--vert);
+  }
+  .filtres__compte {
+    margin: 0 0 0 auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--gris-texte);
+    align-self: center;
+  }
+  .filtres__reset {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--vert);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 4px;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    align-self: center;
+  }
+  .filtres__reset:hover {
+    color: var(--vert-fonce);
+  }
+  .filtrable__vide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+    color: var(--gris-texte);
+    padding: 40px 0;
+  }
+  .filtrable__vide p {
+    margin: 0;
+  }
+</style>
+
+<script>
+  // Filtrage en place — lit les data-* de chaque <li data-recette>.
+  const racine = document.querySelector('.filtrable');
+  if (racine) {
+    const selTemps = racine.querySelector('[data-f-temps]') as HTMLSelectElement | null;
+    const selCout = racine.querySelector('[data-f-cout]') as HTMLSelectElement | null;
+    const caseEnfants = racine.querySelector('[data-f-enfants]') as HTMLInputElement | null;
+    const compte = racine.querySelector('[data-compte]') as HTMLElement | null;
+    const vide = racine.querySelector('[data-vide]') as HTMLElement | null;
+    const resetInline = racine.querySelector('.filtres__reset') as HTMLElement | null;
+    const resets = Array.from(
+      racine.querySelectorAll<HTMLButtonElement>('[data-reset]')
+    );
+    const items = Array.from(
+      racine.querySelectorAll<HTMLElement>('[data-recette]')
+    );
+
+    const appliquer = () => {
+      const tMax = Number(selTemps?.value ?? 0);
+      const cMax = Number(selCout?.value ?? 0);
+      const enfants = Boolean(caseEnfants?.checked);
+      let visibles = 0;
+
+      for (const el of items) {
+        const temps = Number(el.dataset.temps ?? 0);
+        const cout = Number(el.dataset.cout ?? 0);
+        const aimeEnfants = el.dataset.enfants === 'true';
+        const ok =
+          (tMax === 0 || temps <= tMax) &&
+          (cMax === 0 || cout <= cMax) &&
+          (!enfants || aimeEnfants);
+        el.hidden = !ok;
+        if (ok) visibles++;
+      }
+
+      if (compte) compte.textContent = `${visibles} recette${visibles > 1 ? 's' : ''}`;
+      if (vide) vide.hidden = visibles !== 0;
+
+      // Sortie de secours : le bouton « Réinitialiser » n'apparaît que si un
+      // filtre est actif (rien à réinitialiser sinon).
+      const actif = tMax !== 0 || cMax !== 0 || enfants;
+      if (resetInline) resetInline.hidden = !actif;
+    };
+
+    const reinitialiser = () => {
+      if (selTemps) selTemps.value = '0';
+      if (selCout) selCout.value = '0';
+      if (caseEnfants) caseEnfants.checked = false;
+      appliquer();
+    };
+
+    selTemps?.addEventListener('change', appliquer);
+    selCout?.addEventListener('change', appliquer);
+    caseEnfants?.addEventListener('change', appliquer);
+    resets.forEach((b) => b.addEventListener('click', reinitialiser));
+  }
+</script>

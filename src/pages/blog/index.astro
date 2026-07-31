@@ -1,0 +1,104 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const articles = (await getCollection('blog')).sort(
+  (a, b) => b.data.date_publication.valueOf() - a.data.date_publication.valueOf()
+);
+
+const dateFr = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'long' });
+---
+
+<BaseLayout
+  titre="Blogue"
+  description="Trucs, organisation et batch cooking pour familles occupées : nos articles pour manger mieux sans y passer la soirée."
+>
+  <section class="section">
+    <div class="contenu contenu--etroit">
+      <header class="tete">
+        <p class="mono surtitre">Le carnet</p>
+        <h1>Le blogue</h1>
+        <p class="tete__intro">
+          Des trucs concrets pour alléger la semaine : organisation, batch
+          cooking et astuces anti-gaspillage.
+        </p>
+      </header>
+
+      <ul class="liste-articles" role="list">
+        {
+          articles.map((a) => (
+            <li class="article-item">
+              <a href={`/blog/${a.id}/`} class="article-item__lien">
+                <time class="mono article-item__date" datetime={a.data.date_publication.toISOString()}>
+                  {dateFr.format(a.data.date_publication)}
+                </time>
+                <h2 class="article-item__titre">{a.data.titre}</h2>
+                <p class="article-item__desc">{a.data.description}</p>
+                <span class="article-item__cta mono">Lire l'article →</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .contenu--etroit {
+    max-width: 760px;
+  }
+  .surtitre {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    color: var(--terracotta-fonce);
+    margin: 0 0 8px;
+  }
+  .tete {
+    margin-bottom: 30px;
+  }
+  .tete__intro {
+    color: var(--gris-texte);
+    max-width: 52ch;
+  }
+  .liste-articles {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .article-item__lien {
+    display: block;
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: var(--rayon);
+    padding: 24px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .article-item__lien:hover {
+    border-color: var(--vert);
+    box-shadow: var(--ombre);
+  }
+  .article-item__date {
+    font-size: 12px;
+    color: var(--gris-texte);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .article-item__titre {
+    margin: 8px 0 8px;
+  }
+  .article-item__desc {
+    margin: 0 0 12px;
+    color: var(--gris-texte);
+  }
+  .article-item__cta {
+    font-size: 13px;
+    color: var(--vert);
+  }
+</style>

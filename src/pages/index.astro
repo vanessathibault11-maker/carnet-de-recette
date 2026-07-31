@@ -1,0 +1,344 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ItemRecette from '../components/ItemRecette.astro';
+import { CATEGORIES, getCategorie } from '../lib/categories';
+import { formaterCout, formaterTemps } from '../lib/format';
+
+const recettes = (await getCollection('recettes')).sort(
+  (a, b) => b.data.date_publication.valueOf() - a.data.date_publication.valueOf()
+);
+const vedettes = recettes.slice(0, 6);
+
+// Menu de la semaine — recettes assignées à des jours. À curer plus tard ;
+// pour l'instant, les 3 dernières recettes sur Lundi / Mardi / Jeudi.
+const JOURS = ['Lundi', 'Mardi', 'Jeudi'];
+const semaine = recettes.slice(0, 3).map((recette, i) => ({
+  jour: JOURS[i],
+  recette,
+}));
+---
+
+<BaseLayout
+  titre="Le carnet de recettes"
+  description="Le menu de la semaine, sain et sans prise de tête : recettes rapides, budget maîtrisé, approuvées par les enfants. Recettes familiales québécoises."
+>
+  <!-- Héro -->
+  <section class="hero section">
+    <div class="contenu hero__grille">
+      <div class="hero__texte">
+        <p class="hero__surtitre mono">Recettes familiales · Québec</p>
+        <h1 class="hero__titre">Qu'est-ce qu'on mange cette semaine&nbsp;?</h1>
+        <p class="hero__promesse">
+          Des soupers rapides, un budget maîtrisé, approuvés par les enfants.
+          Choisis, cuisine, c'est réglé.
+        </p>
+        <div class="hero__cta">
+          <a href="#cette-semaine" class="bouton bouton--plein">Le menu de la semaine</a>
+          <a href="/categories/soupers-30-min/" class="bouton bouton--ligne"
+            >Soupers 30 min</a
+          >
+        </div>
+      </div>
+      <div class="hero__visuel">
+        <img
+          class="hero__img"
+          src="/images/hero.jpg"
+          alt="Un souper de famille partagé autour de la table"
+          width="1100"
+          height="900"
+          fetchpriority="high"
+        />
+        <span class="hero__chip mono">Frais · budget maîtrisé</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cette semaine — le plan de la semaine, la vraie tâche « quoi cuisiner » -->
+  <section id="cette-semaine" class="section section--pale">
+    <div class="contenu">
+      <div class="entete-section">
+        <h2>Cette semaine</h2>
+        <a href="/recettes/" class="lien-plus mono">Changer le menu →</a>
+      </div>
+      <ul class="semaine" role="list">
+        {
+          semaine.map(({ jour, recette }) => {
+            const cat = getCategorie(recette.data.categorie);
+            return (
+              <li>
+                <a
+                  href={`/recettes/${recette.id}/`}
+                  class="jour"
+                  style={`--cat:${cat.couleur};`}
+                >
+                  <span class="jour__d mono">{jour}</span>
+                  <span class="jour__t">{recette.data.titre}</span>
+                  <span class="jour__m mono">
+                    {formaterTemps(recette.data.temps_total)} ·{' '}
+                    {formaterCout(recette.data.cout_par_portion)}/pers
+                  </span>
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- Grille vedette -->
+  <section class="section">
+    <div class="contenu">
+      <div class="entete-section">
+        <h2>Recettes en vedette</h2>
+        <a href="/recettes/" class="lien-plus mono">Toutes les recettes →</a>
+      </div>
+      <ul class="grille-recettes" role="list">
+        {vedettes.map((r) => <ItemRecette recette={r} />)}
+      </ul>
+    </div>
+  </section>
+
+  <!-- Bande catégories -->
+  <section class="section">
+    <div class="contenu">
+      <h2>Par catégorie</h2>
+      <ul class="bande-cat" role="list">
+        {
+          CATEGORIES.map((c) => (
+            <li>
+              <a
+                href={`/categories/${c.slug}/`}
+                class="cat-tuile"
+                style={`--c:${c.couleur}; --t:${c.texteSur};`}
+              >
+                <img
+                  class="cat-tuile__img"
+                  src={`/images/categories/${c.slug}.jpg`}
+                  alt=""
+                  width="760"
+                  height="560"
+                  loading="lazy"
+                />
+                <span class="cat-tuile__label">{c.label}</span>
+                <span class="cat-tuile__fleche mono" aria-hidden="true">→</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .section--pale {
+    background: var(--creme-pale);
+    border-block: 1px solid var(--bordure);
+  }
+
+  .hero__grille {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .hero__surtitre {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    color: var(--terracotta-fonce);
+    margin: 0 0 16px;
+  }
+  /* Titre héro « Wide & Loud » : plus gros que le h1 standard. */
+  .hero__titre {
+    font-size: clamp(2.7rem, 6.2vw, 4.3rem);
+    margin-bottom: 0.4em;
+  }
+  .hero__promesse {
+    font-size: 1.2rem;
+    max-width: 42ch;
+    color: var(--gris-texte);
+    line-height: 1.5;
+  }
+  .hero__cta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 22px;
+  }
+  .hero__visuel {
+    position: relative;
+    border-radius: var(--rayon);
+    overflow: hidden;
+    box-shadow: var(--ombre);
+  }
+  .hero__img {
+    display: block;
+    width: 100%;
+    height: clamp(300px, 42vw, 440px);
+    object-fit: cover;
+  }
+  .hero__chip {
+    position: absolute;
+    left: 16px;
+    bottom: 16px;
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--charbon);
+    font-size: 12px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    box-shadow: var(--ombre-douce);
+    backdrop-filter: blur(3px);
+  }
+
+  .entete-section {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .entete-section h2 {
+    margin: 0;
+  }
+  .lien-plus {
+    font-size: 13px;
+    text-decoration: none;
+  }
+  .lien-plus:hover {
+    text-decoration: underline;
+  }
+
+  /* Cette semaine — cartes-jour cliquables */
+  .semaine {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+  }
+  .jour {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-left: 5px solid var(--cat);
+    border-radius: var(--rayon);
+    padding: 18px 20px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .jour:hover,
+  .jour:focus-visible {
+    transform: translateY(-3px);
+    box-shadow: var(--ombre);
+  }
+  .jour__d {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gris-texte);
+  }
+  .jour__t {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 1.2rem;
+    line-height: 1.15;
+    color: var(--vert);
+  }
+  .jour__m {
+    font-size: 13px;
+    color: var(--gris-texte);
+  }
+
+  .bande-cat {
+    list-style: none;
+    padding: 0;
+    margin: 24px 0 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+  }
+  .cat-tuile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 168px;
+    background: var(--c);
+    color: #fff;
+    text-decoration: none;
+    border-radius: var(--rayon);
+    padding: 16px 18px;
+    overflow: hidden;
+    isolation: isolate;
+    box-shadow: var(--ombre-douce);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .cat-tuile__img {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  /* Voile : léger en haut (teinte marque), dense en bas pour lire le label. */
+  .cat-tuile::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.12) 0%,
+      rgba(0, 0, 0, 0) 32%,
+      rgba(0, 0, 0, 0.68) 100%
+    );
+  }
+  .cat-tuile__label {
+    font-family: var(--serif);
+    font-size: 1.4rem;
+    font-weight: 600;
+    line-height: 1.1;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+  }
+  .cat-tuile__fleche {
+    position: absolute;
+    left: 18px;
+    top: 15px;
+    font-size: 15px;
+    color: #fff;
+    opacity: 0;
+    transform: translateX(-4px);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .cat-tuile:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--ombre);
+  }
+  .cat-tuile:hover .cat-tuile__img {
+    transform: scale(1.05);
+  }
+  .cat-tuile:hover .cat-tuile__fleche {
+    opacity: 0.95;
+    transform: translateX(0);
+  }
+
+  @media (max-width: 760px) {
+    .hero__grille {
+      grid-template-columns: 1fr;
+    }
+    .hero__visuel {
+      order: -1;
+    }
+  }
+</style>

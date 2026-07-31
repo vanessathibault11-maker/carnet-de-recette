@@ -1,0 +1,29 @@
+---
+// Enveloppe une RecipeCard dans un <li> porteur des data-* de filtrage.
+// Réutilisé par la grille filtrable (catégories, index recettes) et l'accueil.
+import RecipeCard from './RecipeCard.astro';
+import type { CollectionEntry } from 'astro:content';
+
+const { recette } = Astro.props as { recette: CollectionEntry<'recettes'> };
+const d = recette.data;
+---
+
+<li
+  data-recette
+  data-temps={d.temps_total}
+  data-cout={d.cout_par_portion}
+  data-enfants={String(d.aime_des_enfants)}
+>
+  <RecipeCard
+    slug={recette.id}
+    titre={d.titre}
+    categorie={d.categorie}
+    temps_total={d.temps_total}
+    portions={d.portions}
+    cout_par_portion={d.cout_par_portion}
+    proteines={d.macros?.proteines}
+    calories={d.macros?.calories}
+    aime_des_enfants={d.aime_des_enfants}
+    se_congele={d.se_congele}
+  />
+</li>

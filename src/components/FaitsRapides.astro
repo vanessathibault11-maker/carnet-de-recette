@@ -1,0 +1,139 @@
+---
+// Barre de faits rapides d'une page-recette.
+// Le sélecteur de portions ± est câblé par le script de la page-recette
+// (il recalcule les quantités d'ingrédients). Ici : le balisage + les repères.
+import { formaterCout, formaterTemps } from '../lib/format';
+
+export interface Props {
+  temps_total: number;
+  temps_prep: number;
+  temps_cuisson: number;
+  portions: number;
+  cout_par_portion: number;
+  aime_des_enfants: boolean;
+  se_congele: boolean;
+}
+
+const {
+  temps_total,
+  temps_prep,
+  temps_cuisson,
+  portions,
+  cout_par_portion,
+  aime_des_enfants,
+  se_congele,
+} = Astro.props;
+---
+
+<div class="faits">
+  <div class="faits__bloc faits__temps-total">
+    <span class="faits__label">Temps total</span>
+    <span class="faits__valeur-xl mono">{formaterTemps(temps_total)}</span>
+    <span class="faits__sous mono">prépa {temps_prep} · cuisson {temps_cuisson}</span>
+  </div>
+
+  <div class="faits__bloc">
+    <span class="faits__label" id="label-portions">Portions</span>
+    <div class="portions" role="group" aria-labelledby="label-portions">
+      <button type="button" class="portions__btn" data-portions-moins aria-label="Réduire les portions">−</button>
+      <span class="faits__valeur mono" data-portions data-base-portions={portions}>{portions}</span>
+      <button type="button" class="portions__btn" data-portions-plus aria-label="Augmenter les portions">+</button>
+    </div>
+  </div>
+
+  <div class="faits__bloc">
+    <span class="faits__label">Coût par portion</span>
+    <span class="faits__valeur mono">{formaterCout(cout_par_portion)}</span>
+    <span class="faits__sous">approximatif</span>
+  </div>
+
+  <div class="faits__bloc faits__badges">
+    {aime_des_enfants && <span class="pastille">👶 Aimé des enfants</span>}
+    {se_congele && <span class="pastille">❄️ Se congèle</span>}
+  </div>
+</div>
+
+<style>
+  .faits {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 18px 24px;
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: var(--rayon);
+    padding: 22px;
+  }
+  .faits__bloc {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .faits__label {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gris-texte);
+  }
+  .faits__valeur-xl {
+    font-size: clamp(1.8rem, 5vw, 2.4rem);
+    font-weight: 500;
+    color: var(--vert);
+    line-height: 1;
+  }
+  .faits__valeur {
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: var(--charbon);
+  }
+  .faits__sous {
+    font-size: 12px;
+    color: var(--gris-texte);
+  }
+
+  .portions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .portions__btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--vert);
+    background: var(--blanc);
+    color: var(--vert);
+    border-radius: var(--rayon);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .portions__btn:hover {
+    background: var(--vert);
+    color: #fff;
+  }
+  .portions__btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .portions [data-portions] {
+    min-width: 1.5ch;
+    text-align: center;
+  }
+
+  .faits__badges {
+    justify-content: center;
+    gap: 8px;
+  }
+  .pastille {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--creme);
+    border: 1px solid var(--bordure);
+    border-radius: 999px;
+    padding: 5px 12px;
+    width: fit-content;
+  }
+</style>

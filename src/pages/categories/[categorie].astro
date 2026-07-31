@@ -1,0 +1,79 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FiltresCategorie from '../../components/FiltresCategorie.astro';
+import ItemRecette from '../../components/ItemRecette.astro';
+import { CATEGORIES, getCategorieBySlug } from '../../lib/categories';
+
+export async function getStaticPaths() {
+  const recettes = await getCollection('recettes');
+  return CATEGORIES.map((cat) => ({
+    params: { categorie: cat.slug },
+    props: {
+      cat,
+      recettes: recettes
+        .filter((r) => r.data.categorie === cat.label)
+        .sort((a, b) => a.data.temps_total - b.data.temps_total),
+    },
+  }));
+}
+
+const { cat, recettes } = Astro.props;
+---
+
+<BaseLayout
+  titre={`Recettes ${cat.label}`}
+  description={`Nos recettes de la catégorie ${cat.label} : rapides, économiques et familiales. Filtre par temps, coût et « aimé des enfants ».`}
+>
+  <section class="tete-cat" style={`--c:${cat.couleur}; --t:${cat.texteSur};`}>
+    <div class="contenu">
+      <p class="mono tete-cat__fil">
+        <a href="/recettes/">Recettes</a> / {cat.label}
+      </p>
+      <h1>Recettes · {cat.label}</h1>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="contenu">
+      {
+        recettes.length > 0 ? (
+          <FiltresCategorie total={recettes.length}>
+            {recettes.map((r) => (
+              <ItemRecette recette={r} />
+            ))}
+          </FiltresCategorie>
+        ) : (
+          <p class="vide-cat">
+            Pas encore de recette dans cette catégorie. Reviens bientôt — ou vois{' '}
+            <a href="/recettes/">toutes les recettes</a>.
+          </p>
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .tete-cat {
+    background: var(--c);
+    color: var(--t);
+    padding-block: clamp(2rem, 6vw, 3.5rem);
+  }
+  .tete-cat h1 {
+    color: var(--t);
+    margin: 6px 0 0;
+  }
+  .tete-cat__fil {
+    font-size: 13px;
+    opacity: 0.9;
+    margin: 0;
+  }
+  .tete-cat__fil a {
+    color: inherit;
+  }
+  .vide-cat {
+    color: var(--gris-texte);
+    padding: 30px 0;
+  }
+</style>

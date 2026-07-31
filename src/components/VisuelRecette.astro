@@ -1,0 +1,96 @@
+---
+// Visuel généré (SVG/CSS) — JAMAIS de photo.
+// Deux sources, dans l'ordre de priorité :
+//   1. `visuel` : un SVG AUTONOME (fond compris) déposé par le skill
+//      `generateur-visuel-recette` dans src/visuels/<slug>.svg → affiché tel quel.
+//   2. Repli : fond coloré par catégorie + illustration de la banque (id-based),
+//      encre = `texteSur` de la catégorie (via --ink / currentColor) pour rester
+//      lisible sur les fonds clairs comme sur les fonds foncés.
+import { getCategorie, getIllustration } from '../lib/categories';
+
+export interface Props {
+  categorie: string;
+  /** Id d'illustration ; par défaut, celle de la catégorie. */
+  illustration?: string;
+  titre: string;
+  /**
+   * SVG autonome (contenu brut du fichier src/visuels/<slug>.svg), s'il existe.
+   * Prioritaire : le skill `generateur-visuel-recette` le fournit avec son propre
+   * fond. Absent → on retombe sur l'illustration de la banque.
+   */
+  visuel?: string;
+  /** Hauteur du visuel (ex. "240px", "clamp(...)"). Par défaut 240px. */
+  hauteur?: string;
+  /** true = grand visuel héro (illustration plus large). */
+  hero?: boolean;
+}
+
+const { categorie, illustration, titre, visuel, hauteur = '240px', hero = false } =
+  Astro.props;
+const cat = getCategorie(categorie);
+const svgInterne = getIllustration(illustration ?? cat.illustrationParDefaut);
+---
+
+<div
+  class:list={['visuel', { 'visuel--hero': hero, 'visuel--fichier': !!visuel }]}
+  style={`--bg:${cat.couleur}; --ink:${cat.texteSur}; --h:${hauteur};`}
+  role="img"
+  aria-label={`Illustration de la recette : ${titre} (${cat.label})`}
+>
+  {
+    visuel ? (
+      <Fragment set:html={visuel} />
+    ) : (
+      <svg viewBox="0 0 240 240" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <Fragment set:html={svgInterne} />
+      </svg>
+    )
+  }
+</div>
+
+<style>
+  .visuel {
+    height: var(--h);
+    background: var(--bg);
+    /* Encre de l'illustration de repli : suit texteSur de la catégorie. */
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+  /* Lumière douce en haut + vignette en bas : donne du volume au bloc plat. */
+  .visuel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        120% 90% at 50% 8%,
+        rgba(255, 255, 255, 0.28),
+        rgba(255, 255, 255, 0) 55%
+      ),
+      linear-gradient(180deg, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.1));
+    pointer-events: none;
+  }
+  .visuel svg {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  /* Le héro laisse respirer l'illustration au centre. */
+  .visuel--hero svg {
+    max-width: 460px;
+    margin-inline: auto;
+  }
+  /* SVG autonome (fichier du skill) : fond compris, on le met à l'échelle sans
+     le déformer (preserveAspectRatio du fichier), il occupe toute la surface. */
+  .visuel--fichier :global(svg) {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+</style>

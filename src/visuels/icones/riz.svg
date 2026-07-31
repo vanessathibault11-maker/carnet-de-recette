@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <title>Bol de riz</title>
+  <path d="M24 54h52a26 20 0 0 1-52 0z" />
+  <path d="M20 54h60" />
+  <path d="M40 46a20 16 0 0 1 20 0" />
+  <g stroke-width="2.4" opacity="0.7">
+    <path d="M42 44l2 3M50 42l0 3M58 44l-2 3" />
+  </g>
+</svg>

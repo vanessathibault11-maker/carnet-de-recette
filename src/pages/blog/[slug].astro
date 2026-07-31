@@ -1,0 +1,116 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const articles = await getCollection('blog');
+  return articles.map((a) => ({ params: { slug: a.id }, props: { article: a } }));
+}
+
+const { article } = Astro.props as { article: CollectionEntry<'blog'> };
+const { Content } = await render(article);
+const dateFr = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'long' });
+---
+
+<BaseLayout titre={article.data.titre} description={article.data.description}>
+  <article class="section">
+    <div class="contenu contenu--article">
+      <nav class="miette mono" aria-label="Fil d'Ariane">
+        <a href="/blog/">Blogue</a>
+        <span aria-hidden="true">/</span>
+        <span>{article.data.titre}</span>
+      </nav>
+
+      <header class="art-tete">
+        <time class="mono art-tete__date" datetime={article.data.date_publication.toISOString()}>
+          {dateFr.format(article.data.date_publication)} · {article.data.auteur}
+        </time>
+        <h1>{article.data.titre}</h1>
+        <p class="art-tete__desc">{article.data.description}</p>
+      </header>
+
+      <div class="prose">
+        <Content />
+      </div>
+
+      <footer class="avertissement" role="note">
+        Information générale à visée éducative — pour des besoins particuliers
+        (allergies, régimes médicaux, nutrition d'un enfant), consultez un
+        professionnel de la santé.
+      </footer>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .contenu--article {
+    max-width: 720px;
+  }
+  .miette {
+    font-size: 13px;
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    color: var(--gris-texte);
+  }
+  .miette a {
+    text-decoration: none;
+    color: var(--gris-texte);
+  }
+  .miette a:hover {
+    color: var(--vert);
+  }
+
+  .art-tete {
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--bordure);
+    padding-bottom: 22px;
+  }
+  .art-tete__date {
+    font-size: 12px;
+    color: var(--gris-texte);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .art-tete__desc {
+    font-size: 1.15rem;
+    color: var(--gris-texte);
+    margin: 12px 0 0;
+  }
+
+  /* Prose éditoriale */
+  .prose :global(h2) {
+    margin-top: 1.8em;
+    font-size: 1.5rem;
+  }
+  .prose :global(p) {
+    line-height: 1.75;
+    margin: 1em 0;
+  }
+  .prose :global(ul),
+  .prose :global(ol) {
+    line-height: 1.7;
+    padding-left: 1.3em;
+  }
+  .prose :global(li) {
+    margin: 0.4em 0;
+  }
+  .prose :global(a) {
+    color: var(--vert);
+    text-underline-offset: 2px;
+  }
+  .prose :global(hr) {
+    border: none;
+    border-top: 1px solid var(--bordure);
+    margin: 2em 0;
+  }
+
+  .avertissement {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--bordure);
+    font-size: 13px;
+    color: var(--gris-texte);
+  }
+</style>

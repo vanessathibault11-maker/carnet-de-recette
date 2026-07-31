@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <title>Casserole</title>
+  <path d="M26 52h48v10a16 16 0 0 1-16 16H42a16 16 0 0 1-16-16z" />
+  <path d="M22 52h56M20 46h-6a5 5 0 0 0 0 10h6M80 46h6a5 5 0 0 1 0 10h-6" />
+  <path d="M42 40c-4-5-4-9 0-13M58 40c-4-5-4-9 0-13" opacity="0.6" />
+</svg>
