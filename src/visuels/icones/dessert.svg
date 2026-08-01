@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <title>Part de dessert</title>
+  <path d="M30 70V46l20-9 20 9v24z" />
+  <path d="M30 46l20 9 20-9" />
+  <path d="M31 58q19 8 38 0" opacity="0.5" />
+  <path d="M50 37v-9" />
+  <circle cx="50" cy="25" r="2.6" fill="currentColor" stroke="none" />
+</svg>

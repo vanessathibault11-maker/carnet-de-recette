@@ -44,25 +44,37 @@ const cat = getCategorie(categorie);
   <span class="carte__tag mono">{cat.label}</span>
   <h3 class="carte__titre">{titre}</h3>
 
-  <div class="carte__faits">
-    <div class="carte__ligne mono">
-      <span class="carte__temps">⏱ {formaterTemps(temps_total)}</span>
-      <span>🍽 {portions} portions</span>
+  <dl class="carte__faits">
+    <div class="carte__fait">
+      <dt>Temps</dt>
+      <dd>{formaterTemps(temps_total)}</dd>
     </div>
-    <div class="carte__ligne mono">
-      <span class="carte__cout">💲 {formaterCout(cout_par_portion)}/pers</span>
-      {
-        proteines != null && (
-          <span>🍗 {proteines} g{calories != null && ` · ${calories} kcal`}</span>
-        )
-      }
+    <div class="carte__fait">
+      <dt>Portions</dt>
+      <dd>{portions}</dd>
     </div>
-  </div>
+    <div class="carte__fait">
+      <dt>Coût / pers</dt>
+      <dd>{formaterCout(cout_par_portion)}</dd>
+    </div>
+    {
+      proteines != null && (
+        <div class="carte__fait">
+          <dt>Protéines</dt>
+          <dd>{proteines} g</dd>
+        </div>
+      )
+    }
+  </dl>
 
-  <div class="carte__badges">
-    {aime_des_enfants && <span class="carte__badge">👶 Aimé des enfants</span>}
-    {se_congele && <span class="carte__badge">❄️ Se congèle</span>}
-  </div>
+  {
+    (aime_des_enfants || se_congele) && (
+      <div class="carte__badges">
+        {aime_des_enfants && <span class="carte__badge">Aimé des enfants</span>}
+        {se_congele && <span class="carte__badge">Se congèle</span>}
+      </div>
+    )
+  }
 </a>
 
 <style>
@@ -106,28 +118,31 @@ const cat = getCategorie(categorie);
   }
 
   .carte__faits {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 16px;
     border-block: 1px solid var(--bordure);
-    padding-block: 14px;
+    padding-block: 16px;
+    margin: 0;
     margin-top: auto;
   }
-  .carte__ligne {
+  .carte__fait {
     display: flex;
-    align-items: center;
-    gap: 8px 16px;
-    flex-wrap: wrap;
-    font-size: 14px;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .carte__fait dt {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gris-texte);
+  }
+  .carte__fait dd {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 500;
     color: var(--charbon);
-  }
-  .carte__temps {
-    color: var(--vert);
-    font-weight: 500;
-  }
-  .carte__cout {
-    color: var(--bleu-gris);
-    font-weight: 500;
   }
 
   .carte__badges {
@@ -137,7 +152,10 @@ const cat = getCategorie(categorie);
   }
   .carte__badge {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gris-texte);
     background: var(--creme);
     border: 1px solid var(--bordure);
     border-radius: 999px;

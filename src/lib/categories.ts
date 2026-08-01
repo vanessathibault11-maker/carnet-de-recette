@@ -4,7 +4,7 @@
 // Tout le site lit d'ici — ne dupliquez pas ces valeurs ailleurs.
 // -----------------------------------------------------------------------------
 
-export type CategorieKey = 'poulet' | 'poisson' | 'vege' | 'dessert' | 'soupers30min';
+export type CategorieKey = 'poulet' | 'poisson' | 'vege' | 'dessert' | 'boeuf';
 
 export interface Categorie {
   key: CategorieKey;
@@ -16,20 +16,14 @@ export interface Categorie {
   couleur: string;
   /** Couleur de texte lisible SUR `couleur` (contraste accessible). */
   texteSur: string;
-  /** Id d'illustration par défaut pour cette catégorie. */
+  /** Id d'illustration/icône par défaut pour cette catégorie. */
   illustrationParDefaut: string;
 }
 
 // Ordre d'affichage dans la bande catégories.
+// Note : les catégories sont des TYPES DE PLAT (par protéine), pas des durées.
+// Le temps de préparation est un FILTRE, pas une catégorie.
 export const CATEGORIES: Categorie[] = [
-  {
-    key: 'soupers30min',
-    label: 'Soupers 30 min',
-    slug: 'soupers-30-min',
-    couleur: '#C97B3F',
-    texteSur: '#2B2B2B',
-    illustrationParDefaut: 'casserole',
-  },
   {
     key: 'poulet',
     label: 'Poulet',
@@ -37,6 +31,14 @@ export const CATEGORIES: Categorie[] = [
     couleur: '#C8674B',
     texteSur: '#FFFFFF',
     illustrationParDefaut: 'poulet',
+  },
+  {
+    key: 'boeuf',
+    label: 'Bœuf & porc',
+    slug: 'boeuf',
+    couleur: '#8A4B3C',
+    texteSur: '#FFFFFF',
+    illustrationParDefaut: 'casserole',
   },
   {
     key: 'poisson',
@@ -72,7 +74,7 @@ const normaliser = (s: string) =>
 const PAR_LABEL = new Map(CATEGORIES.map((c) => [normaliser(c.label), c]));
 const PAR_SLUG = new Map(CATEGORIES.map((c) => [c.slug, c]));
 
-/** Catégorie depuis le libellé du frontmatter. Retombe sur « Soupers 30 min » si inconnu. */
+/** Catégorie depuis le libellé du frontmatter. Retombe sur la 1re catégorie si inconnu. */
 export function getCategorie(label: string): Categorie {
   return PAR_LABEL.get(normaliser(label)) ?? CATEGORIES[0];
 }

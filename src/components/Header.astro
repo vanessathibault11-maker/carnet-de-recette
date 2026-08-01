@@ -1,5 +1,4 @@
 ---
-import { CATEGORIES } from '../lib/categories';
 ---
 
 <header class="entete" data-entete>
@@ -38,11 +37,6 @@ import { CATEGORIES } from '../lib/categories';
 
     <nav id="menu-principal" class="entete__nav" aria-label="Navigation principale">
       <a href="/recettes/">Recettes</a>
-      {
-        CATEGORIES.map((c) => (
-          <a href={`/categories/${c.slug}/`}>{c.label}</a>
-        ))
-      }
       <a href="/blog/">Blogue</a>
     </nav>
   </div>

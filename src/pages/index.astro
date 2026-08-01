@@ -2,21 +2,13 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ItemRecette from '../components/ItemRecette.astro';
-import { CATEGORIES, getCategorie } from '../lib/categories';
-import { formaterCout, formaterTemps } from '../lib/format';
+import { CATEGORIES } from '../lib/categories';
 
 const recettes = (await getCollection('recettes')).sort(
   (a, b) => b.data.date_publication.valueOf() - a.data.date_publication.valueOf()
 );
-const vedettes = recettes.slice(0, 6);
-
-// Menu de la semaine — recettes assignées à des jours. À curer plus tard ;
-// pour l'instant, les 3 dernières recettes sur Lundi / Mardi / Jeudi.
-const JOURS = ['Lundi', 'Mardi', 'Jeudi'];
-const semaine = recettes.slice(0, 3).map((recette, i) => ({
-  jour: JOURS[i],
-  recette,
-}));
+// Les plus récemment publiées — assumé comme tel, pas de faux « menu de la semaine ».
+const dernieres = recettes.slice(0, 4);
 ---
 
 <BaseLayout
@@ -34,10 +26,8 @@ const semaine = recettes.slice(0, 3).map((recette, i) => ({
           Choisis, cuisine, c'est réglé.
         </p>
         <div class="hero__cta">
-          <a href="#cette-semaine" class="bouton bouton--plein">Le menu de la semaine</a>
-          <a href="/categories/soupers-30-min/" class="bouton bouton--ligne"
-            >Soupers 30 min</a
-          >
+          <a href="/recettes/" class="bouton bouton--plein">Voir toutes les recettes</a>
+          <a href="#par-categorie" class="bouton bouton--ligne">Par catégorie</a>
         </div>
       </div>
       <div class="hero__visuel">
@@ -54,54 +44,21 @@ const semaine = recettes.slice(0, 3).map((recette, i) => ({
     </div>
   </section>
 
-  <!-- Cette semaine — le plan de la semaine, la vraie tâche « quoi cuisiner » -->
-  <section id="cette-semaine" class="section section--pale">
+  <!-- Dernières recettes — les plus récemment ajoutées, sans faux planning. -->
+  <section class="section section--pale">
     <div class="contenu">
       <div class="entete-section">
-        <h2>Cette semaine</h2>
-        <a href="/recettes/" class="lien-plus mono">Changer le menu →</a>
-      </div>
-      <ul class="semaine" role="list">
-        {
-          semaine.map(({ jour, recette }) => {
-            const cat = getCategorie(recette.data.categorie);
-            return (
-              <li>
-                <a
-                  href={`/recettes/${recette.id}/`}
-                  class="jour"
-                  style={`--cat:${cat.couleur};`}
-                >
-                  <span class="jour__d mono">{jour}</span>
-                  <span class="jour__t">{recette.data.titre}</span>
-                  <span class="jour__m mono">
-                    {formaterTemps(recette.data.temps_total)} ·{' '}
-                    {formaterCout(recette.data.cout_par_portion)}/pers
-                  </span>
-                </a>
-              </li>
-            );
-          })
-        }
-      </ul>
-    </div>
-  </section>
-
-  <!-- Grille vedette -->
-  <section class="section">
-    <div class="contenu">
-      <div class="entete-section">
-        <h2>Recettes en vedette</h2>
+        <h2>Dernières recettes</h2>
         <a href="/recettes/" class="lien-plus mono">Toutes les recettes →</a>
       </div>
       <ul class="grille-recettes" role="list">
-        {vedettes.map((r) => <ItemRecette recette={r} />)}
+        {dernieres.map((r) => <ItemRecette recette={r} />)}
       </ul>
     </div>
   </section>
 
   <!-- Bande catégories -->
-  <section class="section">
+  <section id="par-categorie" class="section">
     <div class="contenu">
       <h2>Par catégorie</h2>
       <ul class="bande-cat" role="list">
@@ -210,51 +167,6 @@ const semaine = recettes.slice(0, 3).map((recette, i) => ({
   }
   .lien-plus:hover {
     text-decoration: underline;
-  }
-
-  /* Cette semaine — cartes-jour cliquables */
-  .semaine {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 18px;
-  }
-  .jour {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    background: var(--blanc);
-    border: 1px solid var(--bordure);
-    border-left: 5px solid var(--cat);
-    border-radius: var(--rayon);
-    padding: 18px 20px;
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-  }
-  .jour:hover,
-  .jour:focus-visible {
-    transform: translateY(-3px);
-    box-shadow: var(--ombre);
-  }
-  .jour__d {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--gris-texte);
-  }
-  .jour__t {
-    font-family: var(--serif);
-    font-weight: 600;
-    font-size: 1.2rem;
-    line-height: 1.15;
-    color: var(--vert);
-  }
-  .jour__m {
-    font-size: 13px;
-    color: var(--gris-texte);
   }
 
   .bande-cat {

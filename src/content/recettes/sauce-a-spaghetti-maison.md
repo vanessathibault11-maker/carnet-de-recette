@@ -1,6 +1,6 @@
 ---
 titre: Sauce à spaghetti maison
-categorie: Soupers 30 min
+categorie: Bœuf & porc
 temps_total: 30
 temps_prep: 10
 temps_cuisson: 20

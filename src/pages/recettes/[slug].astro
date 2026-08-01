@@ -19,17 +19,18 @@ const d = recette.data;
 const cat = getCategorie(d.categorie);
 const sections = extraireSections(recette.body ?? '');
 
-// Visuel autonome déposé par le skill `generateur-visuel-recette` dans
-// src/visuels/. On charge tous les SVG à la construction (contenu brut), puis on
-// prend celui qui correspond — soit le champ `visuel` du frontmatter, soit, par
-// défaut, src/visuels/<slug>.svg. Absent → VisuelRecette retombe sur la banque.
-const svgFichiers = import.meta.glob<string>('../../visuels/*.svg', {
+// Petit emblème : icône au trait fin de la banque src/visuels/icones/.
+// On prend l'icône nommée par `illustration` du frontmatter, sinon celle par
+// défaut de la catégorie ; repli sûr sur « casserole ».
+const iconesSvg = import.meta.glob<string>('../../visuels/icones/*.svg', {
   query: '?raw',
   import: 'default',
   eager: true,
 });
-const nomVisuel = (d.visuel ?? recette.id).replace(/\.svg$/, '');
-const visuelSvg = svgFichiers[`../../visuels/${nomVisuel}.svg`];
+const iconeId = d.illustration ?? cat.illustrationParDefaut;
+const iconeSvg =
+  iconesSvg[`../../visuels/icones/${iconeId}.svg`] ??
+  iconesSvg[`../../visuels/icones/casserole.svg`];
 
 const urlPage = new URL(`/recettes/${recette.id}/`, Astro.site).href;
 const jsonLd = construireRecipeJsonLd(d, sections, urlPage);
@@ -37,24 +38,6 @@ const jsonLd = construireRecipeJsonLd(d, sections, urlPage);
 
 <BaseLayout titre={d.titre} description={sections.intro} jsonLd={jsonLd}>
   <article class="recette">
-    {
-      /* Visuel affiché UNIQUEMENT si un vrai SVG maison existe pour la recette
-         (src/visuels/<slug>.svg). Sinon : aucun placeholder — on démarre direct
-         sur l'info utile. */
-      visuelSvg && (
-        <div class="recette__hero" style={`--accent:${cat.couleur}`}>
-          <VisuelRecette
-            categorie={d.categorie}
-            illustration={d.illustration}
-            visuel={visuelSvg}
-            titre={d.titre}
-            hauteur="clamp(220px, 34vw, 320px)"
-            hero
-          />
-        </div>
-      )
-    }
-
     <div class="contenu recette__corps">
       <nav class="miette mono" aria-label="Fil d'Ariane">
         <a href="/recettes/">Recettes</a>
@@ -62,13 +45,18 @@ const jsonLd = construireRecipeJsonLd(d, sections, urlPage);
         <a href={`/categories/${cat.slug}/`}>{cat.label}</a>
       </nav>
 
-      <span
-        class="recette__tag mono"
-        style={`--cat:${cat.couleur}; --catxt:${cat.texteSur};`}
-      >
-        {cat.label}
-      </span>
-      <h1>{d.titre}</h1>
+      <div class="recette__tete">
+        <VisuelRecette categorie={d.categorie} icone={iconeSvg} titre={d.titre} />
+        <div class="recette__tete-txt">
+          <span
+            class="recette__tag mono"
+            style={`--cat:${cat.couleur}; --catxt:${cat.texteSur};`}
+          >
+            {cat.label}
+          </span>
+          <h1>{d.titre}</h1>
+        </div>
+      </div>
       {sections.intro && <p class="recette__intro">{sections.intro}</p>}
 
       <FaitsRapides
@@ -155,14 +143,25 @@ const jsonLd = construireRecipeJsonLd(d, sections, urlPage);
 </BaseLayout>
 
 <style>
-  .recette__hero {
-    border-bottom: 4px solid var(--accent);
-  }
   .recette__corps {
     max-width: 900px;
     padding-block: clamp(2rem, 5vw, 3rem);
   }
+  .recette__tete {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .recette__tete-txt {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .recette__tete h1 {
+    margin: 0;
+  }
   .recette__tag {
+    align-self: flex-start;
     display: inline-block;
     font-size: 11px;
     text-transform: uppercase;
@@ -171,7 +170,6 @@ const jsonLd = construireRecipeJsonLd(d, sections, urlPage);
     color: var(--catxt);
     padding: 4px 12px;
     border-radius: 999px;
-    margin-bottom: 14px;
   }
   .miette {
     font-size: 13px;

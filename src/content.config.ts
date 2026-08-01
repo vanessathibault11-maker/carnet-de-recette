@@ -13,7 +13,7 @@ const recettes = defineCollection({
   schema: z.object({
     titre: z.string(),
     // Doit correspondre à un libellé de src/lib/categories.ts
-    categorie: z.enum(['Poulet', 'Poisson', 'Végé', 'Dessert', 'Soupers 30 min']),
+    categorie: z.enum(['Poulet', 'Bœuf & porc', 'Poisson', 'Végé', 'Dessert']),
     temps_total: z.number().int().positive(), // minutes — critère nº1
     temps_prep: z.number().int().nonnegative(),
     temps_cuisson: z.number().int().nonnegative(),

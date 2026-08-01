@@ -1,13 +1,34 @@
 ---
-// Filtres client (temps / coût / aimé des enfants) appliqués à une grille de
-// recettes. La grille est passée en `slot` : chaque élément doit être un
-// <li data-recette data-temps="45" data-cout="3.25" data-enfants="true">…</li>.
-// Aucun rechargement : on montre/masque les cartes en place.
-const { total } = Astro.props as { total: number };
+// Filtres client appliqués à une grille de recettes. La grille est passée en
+// `slot` : chaque élément est un <li data-recette data-temps data-cout
+// data-enfants data-categorie data-cherche>…</li>. Aucun rechargement : on
+// montre/masque les cartes en place.
+//
+// `categories` (optionnel) : si fourni, on affiche des puces de filtre par
+// catégorie. On l'omet sur une page de catégorie unique (filtre inutile).
+import type { Categorie } from '../lib/categories';
+
+interface Props {
+  total: number;
+  categories?: Categorie[];
+}
+const { total, categories = [] } = Astro.props;
+const avecCategories = categories.length > 1;
 ---
 
 <section class="filtrable" aria-label="Recettes filtrables">
   <form class="filtres" aria-label="Filtrer les recettes">
+    <div class="filtre filtre--recherche">
+      <label for="f-recherche">Rechercher</label>
+      <input
+        type="search"
+        id="f-recherche"
+        data-f-recherche
+        placeholder="Nom, ingrédient, mot-clé…"
+        autocomplete="off"
+      />
+    </div>
+
     <div class="filtre">
       <label for="f-temps">Temps max</label>
       <select id="f-temps" data-f-temps>
@@ -33,11 +54,34 @@ const { total } = Astro.props as { total: number };
       <label for="f-enfants">Aimé des enfants</label>
     </div>
 
-    <p class="filtres__compte" data-compte aria-live="polite">{total} recettes</p>
+    <p class="filtres__compte" data-compte aria-live="polite">
+      {total} recette{total > 1 ? 's' : ''}
+    </p>
     <button type="button" class="filtres__reset" data-reset hidden>
       Réinitialiser
     </button>
   </form>
+
+  {
+    avecCategories && (
+      <div class="puces" role="group" aria-label="Filtrer par catégorie">
+        <button type="button" class="puce puce--active" data-cat-puce="" aria-pressed="true">
+          Toutes
+        </button>
+        {categories.map((c) => (
+          <button
+            type="button"
+            class="puce"
+            data-cat-puce={c.slug}
+            aria-pressed="false"
+            style={`--pc:${c.couleur}; --pt:${c.texteSur};`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+    )
+  }
 
   <ul class="grille-recettes filtrable__grille" role="list">
     <slot />
@@ -61,12 +105,15 @@ const { total } = Astro.props as { total: number };
     border: 1px solid var(--bordure);
     border-radius: var(--rayon);
     padding: 16px 18px;
-    margin-bottom: 26px;
+    margin-bottom: 18px;
   }
   .filtre {
     display: flex;
     flex-direction: column;
     gap: 5px;
+  }
+  .filtre--recherche {
+    flex: 1 1 220px;
   }
   .filtre label {
     font-family: var(--mono);
@@ -75,7 +122,8 @@ const { total } = Astro.props as { total: number };
     letter-spacing: 0.04em;
     color: var(--gris-texte);
   }
-  .filtre select {
+  .filtre select,
+  .filtre--recherche input {
     font-family: var(--sans);
     font-size: 14px;
     padding: 8px 10px;
@@ -83,6 +131,13 @@ const { total } = Astro.props as { total: number };
     border-radius: var(--rayon);
     background: var(--creme);
     color: var(--charbon);
+  }
+  .filtre--recherche input {
+    width: 100%;
+  }
+  .filtre--recherche input:focus-visible {
+    outline: 2px solid var(--vert);
+    outline-offset: 1px;
   }
   .filtre--case {
     flex-direction: row;
@@ -124,6 +179,35 @@ const { total } = Astro.props as { total: number };
   .filtres__reset:hover {
     color: var(--vert-fonce);
   }
+
+  /* Puces de catégorie */
+  .puces {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 26px;
+  }
+  .puce {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--charbon);
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: 999px;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .puce:hover {
+    border-color: var(--pc, var(--vert));
+  }
+  .puce--active {
+    background: var(--pc, var(--vert));
+    color: var(--pt, #fff);
+    border-color: var(--pc, var(--vert));
+  }
+
   .filtrable__vide {
     display: flex;
     flex-direction: column;
@@ -145,30 +229,38 @@ const { total } = Astro.props as { total: number };
     const selTemps = racine.querySelector('[data-f-temps]') as HTMLSelectElement | null;
     const selCout = racine.querySelector('[data-f-cout]') as HTMLSelectElement | null;
     const caseEnfants = racine.querySelector('[data-f-enfants]') as HTMLInputElement | null;
+    const champRecherche = racine.querySelector('[data-f-recherche]') as HTMLInputElement | null;
     const compte = racine.querySelector('[data-compte]') as HTMLElement | null;
     const vide = racine.querySelector('[data-vide]') as HTMLElement | null;
     const resetInline = racine.querySelector('.filtres__reset') as HTMLElement | null;
-    const resets = Array.from(
-      racine.querySelectorAll<HTMLButtonElement>('[data-reset]')
-    );
-    const items = Array.from(
-      racine.querySelectorAll<HTMLElement>('[data-recette]')
-    );
+    const puces = Array.from(racine.querySelectorAll<HTMLButtonElement>('[data-cat-puce]'));
+    const resets = Array.from(racine.querySelectorAll<HTMLButtonElement>('[data-reset]'));
+    const items = Array.from(racine.querySelectorAll<HTMLElement>('[data-recette]'));
+
+    let catActive = '';
+
+    const sansAccents = (s: string) =>
+      s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
     const appliquer = () => {
       const tMax = Number(selTemps?.value ?? 0);
       const cMax = Number(selCout?.value ?? 0);
       const enfants = Boolean(caseEnfants?.checked);
+      const terme = sansAccents(champRecherche?.value ?? '');
       let visibles = 0;
 
       for (const el of items) {
         const temps = Number(el.dataset.temps ?? 0);
         const cout = Number(el.dataset.cout ?? 0);
         const aimeEnfants = el.dataset.enfants === 'true';
+        const cat = el.dataset.categorie ?? '';
+        const cherche = el.dataset.cherche ?? '';
         const ok =
           (tMax === 0 || temps <= tMax) &&
           (cMax === 0 || cout <= cMax) &&
-          (!enfants || aimeEnfants);
+          (!enfants || aimeEnfants) &&
+          (catActive === '' || cat === catActive) &&
+          (terme === '' || cherche.includes(terme));
         el.hidden = !ok;
         if (ok) visibles++;
       }
@@ -176,22 +268,40 @@ const { total } = Astro.props as { total: number };
       if (compte) compte.textContent = `${visibles} recette${visibles > 1 ? 's' : ''}`;
       if (vide) vide.hidden = visibles !== 0;
 
-      // Sortie de secours : le bouton « Réinitialiser » n'apparaît que si un
-      // filtre est actif (rien à réinitialiser sinon).
-      const actif = tMax !== 0 || cMax !== 0 || enfants;
+      const actif =
+        tMax !== 0 || cMax !== 0 || enfants || catActive !== '' || terme !== '';
       if (resetInline) resetInline.hidden = !actif;
+    };
+
+    const majPuces = () => {
+      for (const p of puces) {
+        const on = (p.dataset.catPuce ?? '') === catActive;
+        p.classList.toggle('puce--active', on);
+        p.setAttribute('aria-pressed', String(on));
+      }
     };
 
     const reinitialiser = () => {
       if (selTemps) selTemps.value = '0';
       if (selCout) selCout.value = '0';
       if (caseEnfants) caseEnfants.checked = false;
+      if (champRecherche) champRecherche.value = '';
+      catActive = '';
+      majPuces();
       appliquer();
     };
 
     selTemps?.addEventListener('change', appliquer);
     selCout?.addEventListener('change', appliquer);
     caseEnfants?.addEventListener('change', appliquer);
+    champRecherche?.addEventListener('input', appliquer);
+    puces.forEach((p) =>
+      p.addEventListener('click', () => {
+        catActive = p.dataset.catPuce ?? '';
+        majPuces();
+        appliquer();
+      })
+    );
     resets.forEach((b) => b.addEventListener('click', reinitialiser));
   }
 </script>

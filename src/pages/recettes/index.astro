@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import FiltresCategorie from '../../components/FiltresCategorie.astro';
 import ItemRecette from '../../components/ItemRecette.astro';
+import { CATEGORIES } from '../../lib/categories';
 
 const recettes = (await getCollection('recettes')).sort(
   (a, b) => a.data.temps_total - b.data.temps_total
@@ -24,7 +25,7 @@ const recettes = (await getCollection('recettes')).sort(
         </p>
       </header>
 
-      <FiltresCategorie total={recettes.length}>
+      <FiltresCategorie total={recettes.length} categories={CATEGORIES}>
         {recettes.map((r) => <ItemRecette recette={r} />)}
       </FiltresCategorie>
     </div>

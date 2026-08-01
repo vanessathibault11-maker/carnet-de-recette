@@ -2,10 +2,18 @@
 // Enveloppe une RecipeCard dans un <li> porteur des data-* de filtrage.
 // Réutilisé par la grille filtrable (catégories, index recettes) et l'accueil.
 import RecipeCard from './RecipeCard.astro';
+import { getCategorie } from '../lib/categories';
 import type { CollectionEntry } from 'astro:content';
 
 const { recette } = Astro.props as { recette: CollectionEntry<'recettes'> };
 const d = recette.data;
+const cat = getCategorie(d.categorie);
+// Texte cherchable : titre + tags, sans accents ni casse.
+const cherche = [d.titre, ...(d.tags ?? [])]
+  .join(' ')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
 ---
 
 <li
@@ -13,6 +21,8 @@ const d = recette.data;
   data-temps={d.temps_total}
   data-cout={d.cout_par_portion}
   data-enfants={String(d.aime_des_enfants)}
+  data-categorie={cat.slug}
+  data-cherche={cherche}
 >
   <RecipeCard
     slug={recette.id}
