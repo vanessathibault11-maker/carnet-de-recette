@@ -1,0 +1,7 @@
+# Configuration Cloudflare Pages.
+# Le point clé : `pages_build_output_dir` indique à Cloudflare quel dossier
+# publier après le build. Sans ça (ou mal réglé dans le dashboard), Cloudflare
+# publie un dossier vide et toutes les pages renvoient 404.
+name = "carnet-de-recette"
+compatibility_date = "2026-07-31"
+pages_build_output_dir = "dist"
