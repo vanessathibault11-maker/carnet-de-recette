@@ -20,6 +20,24 @@ export function formaterTemps(minutes: number): string {
 }
 
 /**
+ * Découpe le temps pour l'affichage « chiffre héros » des cartes-recettes :
+ * le nombre en gros, l'unité en petit dessous.
+ * 40 -> { valeur: "40", unite: "min" } ; 120 -> { valeur: "2", unite: "h" } ;
+ * 90 -> { valeur: "1h30", unite: "" } (déjà lisible seul, pas d'unité à part).
+ */
+export function formaterTempsHero(minutes: number): {
+  valeur: string;
+  unite: string;
+} {
+  if (minutes < 60) return { valeur: String(minutes), unite: 'min' };
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0
+    ? { valeur: String(h), unite: 'h' }
+    : { valeur: `${h}h${m}`, unite: '' };
+}
+
+/**
  * Formatage minimal de texte de confiance : échappe le HTML puis applique le
  * gras Markdown (**texte**). Suffit pour nos « Notes ».
  */

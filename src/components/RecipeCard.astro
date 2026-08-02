@@ -1,11 +1,11 @@
 ---
-// Carte-recette — fiche d'INFO (pas de placeholder visuel).
-// L'espace sert à décider quoi cuisiner : temps, portions, coût/personne,
-// protéines + calories, et les repères (enfants, congèle). La couleur de
-// catégorie reste en accent (barre latérale + étiquette). Toute la carte
-// est un lien vers la page-recette.
+// Carte-recette — fiche d'INFO (pas de placeholder visuel, jamais de photo).
+// Deux ancres visuelles en haut : l'emblème de catégorie (identité, couleur,
+// même icône que la page-recette) et le temps total en chiffre héros (le
+// critère nº1 du site). Le reste tombe sur une ligne discrète : on scanne des
+// titres, pas des colonnes. Toute la carte est un lien.
 import { getCategorie } from '../lib/categories';
-import { formaterCout, formaterTemps } from '../lib/format';
+import { formaterCout, formaterTempsHero } from '../lib/format';
 
 export interface Props {
   slug: string;
@@ -14,8 +14,8 @@ export interface Props {
   temps_total: number;
   portions: number;
   cout_par_portion: number;
-  proteines?: number;
-  calories?: number;
+  /** Id d'icône du frontmatter ; sinon celle par défaut de la catégorie. */
+  illustration?: string;
   aime_des_enfants: boolean;
   se_congele: boolean;
 }
@@ -27,13 +27,24 @@ const {
   temps_total,
   portions,
   cout_par_portion,
-  proteines,
-  calories,
+  illustration,
   aime_des_enfants,
   se_congele,
 } = Astro.props;
 
 const cat = getCategorie(categorie);
+const temps = formaterTempsHero(temps_total);
+
+// Même banque d'icônes que la page-recette — l'emblème est identique des deux
+// côtés, ce qui relie visuellement la carte à la fiche qu'elle ouvre.
+const icones = import.meta.glob<string>('../visuels/icones/*.svg', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+const icone =
+  icones[`../visuels/icones/${illustration ?? cat.illustrationParDefaut}.svg`] ??
+  icones['../visuels/icones/casserole.svg'];
 ---
 
 <a
@@ -41,124 +52,134 @@ const cat = getCategorie(categorie);
   class="carte"
   style={`--cat:${cat.couleur}; --catxt:${cat.texteSur};`}
 >
-  <span class="carte__tag mono">{cat.label}</span>
+  <span class="carte__haut">
+    <span class="carte__embleme" aria-hidden="true" set:html={icone} />
+    <span class="carte__temps">
+      <b>{temps.valeur}</b>
+      {temps.unite && <i class="mono">{temps.unite}</i>}
+    </span>
+  </span>
+
+  <span class="carte__cat mono">{cat.label}</span>
   <h3 class="carte__titre">{titre}</h3>
 
-  <dl class="carte__faits">
-    <div class="carte__fait">
-      <dt>Temps</dt>
-      <dd>{formaterTemps(temps_total)}</dd>
-    </div>
-    <div class="carte__fait">
-      <dt>Portions</dt>
-      <dd>{portions}</dd>
-    </div>
-    <div class="carte__fait">
-      <dt>Coût / pers</dt>
-      <dd>{formaterCout(cout_par_portion)}</dd>
-    </div>
-    {
-      proteines != null && (
-        <div class="carte__fait">
-          <dt>Protéines</dt>
-          <dd>{proteines} g</dd>
-        </div>
-      )
-    }
-  </dl>
+  <p class="carte__meta mono">
+    {portions} portions · {formaterCout(cout_par_portion)}/pers
+  </p>
 
   {
     (aime_des_enfants || se_congele) && (
-      <div class="carte__badges">
-        {aime_des_enfants && <span class="carte__badge">Aimé des enfants</span>}
-        {se_congele && <span class="carte__badge">Se congèle</span>}
-      </div>
+      <p class="carte__reperes">
+        {aime_des_enfants && <span>Aimé des enfants</span>}
+        {se_congele && <span>Se congèle</span>}
+      </p>
     )
   }
 </a>
 
 <style>
   .carte {
-    background: var(--blanc);
-    border: 1px solid var(--bordure);
-    border-left: 5px solid var(--cat);
-    border-radius: var(--rayon);
-    padding: 20px 22px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    align-items: flex-start;
+    gap: 10px;
+    height: 100%;
+    padding: 22px 22px 20px;
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: var(--rayon);
     text-decoration: none;
     color: inherit;
-    height: 100%;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    transition: box-shadow 0.16s ease, transform 0.16s ease, border-color 0.16s ease;
   }
   .carte:hover,
   .carte:focus-visible {
+    border-color: var(--cat);
     box-shadow: var(--ombre);
     transform: translateY(-2px);
   }
 
-  .carte__tag {
-    align-self: flex-start;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+  /* Emblème + temps : les deux ancres, aux extrémités de la même rangée. */
+  .carte__haut {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 12px;
+    margin-bottom: 2px;
+  }
+  .carte__embleme {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
     background: var(--cat);
     color: var(--catxt);
-    padding: 4px 11px;
-    border-radius: 999px;
+    flex-shrink: 0;
+  }
+  .carte__embleme :global(svg) {
+    width: 58%;
+    height: 58%;
+    display: block;
+  }
+  .carte__temps {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1;
+  }
+  .carte__temps b {
+    font-family: var(--serif);
+    font-size: 2.1rem;
+    font-weight: 500;
+    color: var(--vert);
+    letter-spacing: -0.01em;
+  }
+  .carte__temps i {
+    font-style: normal;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--gris-texte);
+    margin-top: 5px;
+  }
+
+  .carte__cat {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--cat);
   }
   .carte__titre {
     font-family: var(--serif);
-    font-size: 20px;
+    font-size: 21px;
     font-weight: 600;
+    line-height: 1.16;
     color: var(--vert);
     margin: 0;
-    line-height: 1.18;
   }
 
-  .carte__faits {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px 16px;
-    border-block: 1px solid var(--bordure);
-    padding-block: 16px;
+  /* Poussé en pied : les cartes d'une même rangée alignent leur ligne de faits. */
+  .carte__meta {
+    width: 100%;
     margin: 0;
     margin-top: auto;
-  }
-  .carte__fait {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .carte__fait dt {
-    font-family: var(--mono);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    padding-top: 12px;
+    border-top: 1px solid var(--bordure);
+    font-size: 12.5px;
     color: var(--gris-texte);
   }
-  .carte__fait dd {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--charbon);
-  }
-
-  .carte__badges {
+  .carte__reperes {
     display: flex;
-    gap: 8px;
     flex-wrap: wrap;
-  }
-  .carte__badge {
-    font-family: var(--mono);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    gap: 4px 14px;
+    margin: 0;
+    font-size: 11.5px;
     color: var(--gris-texte);
-    background: var(--creme);
-    border: 1px solid var(--bordure);
-    border-radius: 999px;
-    padding: 5px 11px;
+  }
+  .carte__reperes span::before {
+    content: '— ';
+    color: var(--cat);
   }
 </style>
