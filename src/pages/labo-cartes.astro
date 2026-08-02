@@ -1,0 +1,284 @@
+---
+// PAGE DE LABO — temporaire, à supprimer. Sert à comparer des pistes de
+// design pour la carte-recette côte à côte, avec les vraies polices et
+// les vrais tokens du site.
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import RecipeCard from '../components/RecipeCard.astro';
+import { getCategorie } from '../lib/categories';
+import { formaterCout, formaterTemps } from '../lib/format';
+
+const toutes = (await getCollection('recettes')).sort(
+  (a, b) => b.data.date_publication.valueOf() - a.data.date_publication.valueOf()
+);
+const echantillon = toutes.slice(0, 3);
+
+const icones = import.meta.glob<string>('../visuels/icones/*.svg', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+const iconePour = (illustration: string | undefined, defaut: string) =>
+  icones[`../visuels/icones/${illustration ?? defaut}.svg`] ??
+  icones['../visuels/icones/casserole.svg'];
+---
+
+<BaseLayout titre="Labo — cartes" description="Comparaison de pistes de design.">
+  <section class="section">
+    <div class="contenu">
+      <h1>Labo — pistes pour la carte-recette</h1>
+
+      <h2 class="labo__h">Actuel</h2>
+      <p class="labo__note">
+        Quatre paires étiquette/valeur : ça se lit comme un tableau. Beaucoup
+        d'encre pour une décision qui, en survol, tient surtout à « c'est quoi »
+        et « ça prend combien de temps ».
+      </p>
+      <ul class="grille-recettes" role="list">
+        {
+          echantillon.map((r) => (
+            <li>
+              <RecipeCard
+                slug={r.id}
+                titre={r.data.titre}
+                categorie={r.data.categorie}
+                temps_total={r.data.temps_total}
+                portions={r.data.portions}
+                cout_par_portion={r.data.cout_par_portion}
+                proteines={r.data.macros?.proteines}
+                aime_des_enfants={r.data.aime_des_enfants}
+                se_congele={r.data.se_congele}
+              />
+            </li>
+          ))
+        }
+      </ul>
+
+      <h2 class="labo__h">Piste A — éditoriale</h2>
+      <p class="labo__note">
+        L'emblème de catégorie porte la couleur et l'identité, le titre respire,
+        et les chiffres tombent sur UNE ligne discrète. On scanne les titres,
+        pas des colonnes.
+      </p>
+      <ul class="grille-recettes" role="list">
+        {
+          echantillon.map((r) => {
+            const c = getCategorie(r.data.categorie);
+            return (
+              <li>
+                <a href={`/recettes/${r.id}/`} class="a-carte" style={`--c:${c.couleur}; --ct:${c.texteSur};`}>
+                  <span class="a-carte__embleme" aria-hidden="true" set:html={iconePour(r.data.illustration, c.illustrationParDefaut)} />
+                  <span class="a-carte__cat mono">{c.label}</span>
+                  <h3 class="a-carte__titre">{r.data.titre}</h3>
+                  <p class="a-carte__meta mono">
+                    {formaterTemps(r.data.temps_total)} · {r.data.portions} portions ·{' '}
+                    {formaterCout(r.data.cout_par_portion)}/pers
+                  </p>
+                  {(r.data.aime_des_enfants || r.data.se_congele) && (
+                    <p class="a-carte__reperes">
+                      {r.data.aime_des_enfants && <span>Aimé des enfants</span>}
+                      {r.data.se_congele && <span>Se congèle</span>}
+                    </p>
+                  )}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+
+      <h2 class="labo__h">Piste B — fiche décision</h2>
+      <p class="labo__note">
+        Le temps devient le chiffre héros (c'est le critère nº1 annoncé sur le
+        site), la catégorie passe en bandeau coloré, et le reste tient en
+        pastilles compactes en pied de carte.
+      </p>
+      <ul class="grille-recettes" role="list">
+        {
+          echantillon.map((r) => {
+            const c = getCategorie(r.data.categorie);
+            return (
+              <li>
+                <a href={`/recettes/${r.id}/`} class="b-carte" style={`--c:${c.couleur}; --ct:${c.texteSur};`}>
+                  <span class="b-carte__bandeau mono">{c.label}</span>
+                  <span class="b-carte__corps">
+                    <span class="b-carte__temps">
+                      <b>{r.data.temps_total}</b>
+                      <i class="mono">min</i>
+                    </span>
+                    <h3 class="b-carte__titre">{r.data.titre}</h3>
+                  </span>
+                  <span class="b-carte__pied">
+                    <span class="b-carte__chip mono">{formaterCout(r.data.cout_par_portion)}/pers</span>
+                    <span class="b-carte__chip mono">{r.data.portions} portions</span>
+                    {r.data.aime_des_enfants && <span class="b-carte__chip mono">Enfants</span>}
+                    {r.data.se_congele && <span class="b-carte__chip mono">Congèle</span>}
+                  </span>
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .labo__h {
+    margin-top: 56px;
+    padding-top: 20px;
+    border-top: 2px solid var(--gris-doux);
+  }
+  .labo__note {
+    color: var(--gris-texte);
+    max-width: 62ch;
+    margin-bottom: 22px;
+  }
+
+  /* ---------- Piste A ---------- */
+  .a-carte {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    height: 100%;
+    padding: 24px 22px 22px;
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: var(--rayon);
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.16s ease, transform 0.16s ease;
+  }
+  .a-carte:hover,
+  .a-carte:focus-visible {
+    box-shadow: var(--ombre);
+    transform: translateY(-2px);
+  }
+  .a-carte__embleme {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--c);
+    color: var(--ct);
+  }
+  .a-carte__embleme :global(svg) {
+    width: 58%;
+    height: 58%;
+  }
+  .a-carte__cat {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--c);
+  }
+  .a-carte__titre {
+    font-family: var(--serif);
+    font-size: 21px;
+    line-height: 1.16;
+    color: var(--vert);
+    margin: 0;
+  }
+  .a-carte__meta {
+    font-size: 12.5px;
+    color: var(--gris-texte);
+    margin: 2px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--bordure);
+    width: 100%;
+    margin-top: auto;
+  }
+  .a-carte__reperes {
+    display: flex;
+    gap: 14px;
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 11.5px;
+    color: var(--gris-texte);
+  }
+  .a-carte__reperes span::before {
+    content: '— ';
+    color: var(--c);
+  }
+
+  /* ---------- Piste B ---------- */
+  .b-carte {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: var(--rayon);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.16s ease, transform 0.16s ease;
+  }
+  .b-carte:hover,
+  .b-carte:focus-visible {
+    box-shadow: var(--ombre);
+    transform: translateY(-2px);
+  }
+  .b-carte__bandeau {
+    background: var(--c);
+    color: var(--ct);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 8px 18px;
+  }
+  .b-carte__corps {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 18px 18px 16px;
+    flex: 1;
+  }
+  .b-carte__temps {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+    flex-shrink: 0;
+    padding-right: 16px;
+    border-right: 1px solid var(--bordure);
+  }
+  .b-carte__temps b {
+    font-family: var(--serif);
+    font-size: 2.2rem;
+    font-weight: 500;
+    color: var(--vert);
+  }
+  .b-carte__temps i {
+    font-style: normal;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gris-texte);
+    margin-top: 4px;
+  }
+  .b-carte__titre {
+    font-family: var(--serif);
+    font-size: 19px;
+    line-height: 1.2;
+    color: var(--charbon);
+    margin: 0;
+  }
+  .b-carte__pied {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 18px 18px;
+  }
+  .b-carte__chip {
+    font-size: 10.5px;
+    color: var(--gris-texte);
+    background: var(--creme);
+    border: 1px solid var(--bordure);
+    border-radius: 6px;
+    padding: 4px 8px;
+  }
+</style>

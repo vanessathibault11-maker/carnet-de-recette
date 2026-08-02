@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-labelledby="t d">
+  <title id="t">Boulettes de poulet teriyaki</title>
+  <desc id="d">Illustration à plat : un bol de riz surmonté de boulettes glacées et parsemé de graines de sésame, fond terracotta.</desc>
+  <rect width="400" height="300" fill="#C8674B" />
+  <g fill="none" stroke="#FBF7F0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- vapeur -->
+    <path d="M176 92c-8-10-8-18 0-27M208 88c-8-10-8-18 0-27" opacity="0.55" />
+    <!-- bol -->
+    <path d="M116 150h168a84 60 0 0 1-168 0z" fill="#2B2B2B" fill-opacity="0.15" />
+    <path d="M110 150h180" />
+    <path d="M124 150a76 54 0 0 0 152 0" />
+    <!-- riz (points) -->
+    <circle cx="150" cy="164" r="3" fill="#FBF7F0" stroke="none" />
+    <circle cx="172" cy="176" r="3" fill="#FBF7F0" stroke="none" />
+    <circle cx="230" cy="170" r="3" fill="#FBF7F0" stroke="none" />
+    <circle cx="252" cy="162" r="3" fill="#FBF7F0" stroke="none" />
+    <!-- boulettes glacées -->
+    <circle cx="172" cy="140" r="20" fill="#2B2B2B" fill-opacity="0.18" />
+    <circle cx="172" cy="140" r="20" />
+    <circle cx="212" cy="146" r="22" fill="#2B2B2B" fill-opacity="0.18" />
+    <circle cx="212" cy="146" r="22" />
+    <circle cx="252" cy="140" r="20" fill="#2B2B2B" fill-opacity="0.18" />
+    <circle cx="252" cy="140" r="20" />
+    <!-- graines de sésame -->
+    <circle cx="168" cy="134" r="2.5" fill="#E0A93B" stroke="none" />
+    <circle cx="214" cy="140" r="2.5" fill="#E0A93B" stroke="none" />
+    <circle cx="250" cy="146" r="2.5" fill="#E0A93B" stroke="none" />
+    <!-- baguettes -->
+    <path d="M286 108l-70 52M296 120l-66 48" opacity="0.85" />
+  </g>
+</svg>
