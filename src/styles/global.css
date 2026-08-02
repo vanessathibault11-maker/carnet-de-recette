@@ -100,6 +100,10 @@ svg {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 22px;
+  /* C'est un <ul> : sans ça, les puces des <li> s'affichent à côté des cartes. */
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 /* Boutons */
