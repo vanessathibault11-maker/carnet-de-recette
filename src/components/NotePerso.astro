@@ -1,0 +1,97 @@
+---
+// Note personnelle sur une recette (« doubler la sauce », « les enfants ont
+// adoré », « 5 min de plus au four »). Reste dans le navigateur, jamais publiée.
+interface Props {
+  slug: string;
+}
+const { slug } = Astro.props;
+---
+
+<section class="note-perso" aria-labelledby="t-note-perso" data-note-perso data-slug={slug}>
+  <h2 id="t-note-perso">Ma note</h2>
+  <p class="note-perso__aide mono">
+    Pour toi seulement · enregistrée sur cet appareil, jamais publiée
+  </p>
+  <textarea
+    class="note-perso__champ"
+    data-note-champ
+    rows="3"
+    placeholder="Ce que tu changerais la prochaine fois…"
+    aria-label="Ma note sur cette recette"></textarea>
+  <p class="note-perso__etat mono" data-note-etat role="status" aria-live="polite"></p>
+</section>
+
+<style>
+  .note-perso {
+    margin-top: 44px;
+  }
+  .note-perso h2 {
+    margin-bottom: 4px;
+  }
+  .note-perso__aide {
+    font-size: 12px;
+    color: var(--gris-texte);
+    margin: 0 0 12px;
+  }
+  .note-perso__champ {
+    width: 100%;
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--charbon);
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: var(--rayon);
+    padding: 14px 16px;
+    resize: vertical;
+  }
+  .note-perso__champ:focus-visible {
+    outline: 2px solid var(--vert);
+    outline-offset: 1px;
+  }
+  .note-perso__etat {
+    font-size: 12px;
+    color: var(--gris-texte);
+    margin: 8px 0 0;
+    min-height: 1em;
+  }
+
+  @media print {
+    .note-perso__aide,
+    .note-perso__etat {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  import { lireNote, ecrireNote } from '../lib/carnetLocal';
+
+  const zone = document.querySelector<HTMLElement>('[data-note-perso]');
+  const champ = document.querySelector<HTMLTextAreaElement>('[data-note-champ]');
+  const etat = document.querySelector<HTMLElement>('[data-note-etat]');
+  const slug = zone?.dataset.slug;
+
+  if (champ && slug) {
+    champ.value = lireNote(slug);
+
+    // Enregistrement différé : on ne veut pas écrire à chaque touche, ni
+    // obliger l'utilisatrice à penser à un bouton « sauvegarder ».
+    let minuterie: number | undefined;
+    const enregistrer = () => {
+      ecrireNote(slug, champ.value);
+      if (etat) {
+        etat.textContent = champ.value.trim() ? 'Note enregistrée' : '';
+        window.setTimeout(() => {
+          if (etat.textContent === 'Note enregistrée') etat.textContent = '';
+        }, 2500);
+      }
+    };
+
+    champ.addEventListener('input', () => {
+      window.clearTimeout(minuterie);
+      minuterie = window.setTimeout(enregistrer, 600);
+    });
+    champ.addEventListener('blur', enregistrer);
+  }
+</script>

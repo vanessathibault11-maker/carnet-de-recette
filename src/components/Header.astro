@@ -38,6 +38,11 @@
     <nav id="menu-principal" class="entete__nav" aria-label="Navigation principale">
       <a href="/recettes/">Recettes</a>
       <a href="/blog/">Blogue</a>
+      <a href="/mon-carnet/">Mon carnet</a>
+      <a href="/panier/" class="entete__panier">
+        Ma liste
+        <span class="entete__compteur" data-compteur-panier hidden></span>
+      </a>
     </nav>
   </div>
 </header>
@@ -100,6 +105,29 @@
   .entete__nav a:hover {
     color: var(--vert);
     border-bottom-color: var(--terracotta);
+  }
+
+  /* Lien « Ma liste » + pastille de compte (remplie côté client). */
+  .entete__panier {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .entete__compteur {
+    display: inline-grid;
+    place-items: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--vert);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1;
+  }
+  .entete__compteur[hidden] {
+    display: none;
   }
 
   /* Bouton hamburger — masqué sur desktop, révélé sous 760px. */
@@ -182,6 +210,26 @@
     }
   }
 </style>
+
+<script>
+  // Compteur du panier — le HTML est statique et identique pour tout le monde,
+  // le nombre arrive du stockage local après le rendu.
+  import { nombreAuPanier, EVENEMENT_MAJ } from '../lib/carnetLocal';
+
+  const compteur = document.querySelector<HTMLElement>('[data-compteur-panier]');
+  const majCompteur = () => {
+    if (!compteur) return;
+    const n = nombreAuPanier();
+    compteur.textContent = String(n);
+    compteur.hidden = n === 0;
+    compteur.setAttribute(
+      'aria-label',
+      `${n} recette${n > 1 ? 's' : ''} dans ma liste d'épicerie`
+    );
+  };
+  window.addEventListener(EVENEMENT_MAJ, majCompteur);
+  majCompteur();
+</script>
 
 <script>
   const header = document.querySelector<HTMLElement>('[data-entete]');

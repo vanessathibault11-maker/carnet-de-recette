@@ -1,15 +1,23 @@
 ---
 // Enveloppe une RecipeCard dans un <li> porteur des data-* de filtrage.
 // Réutilisé par la grille filtrable (catégories, index recettes) et l'accueil.
+// Le <li> porte aussi les actions perso (favori, panier) : elles vivent HORS
+// du lien de la carte — imbriquer un bouton dans un <a> casserait la
+// navigation clavier et déclencherait le lien au clic.
 import RecipeCard from './RecipeCard.astro';
+import ActionsRecette from './ActionsRecette.astro';
 import { getCategorie } from '../lib/categories';
+import { extraireSections } from '../lib/recetteSchema';
 import type { CollectionEntry } from 'astro:content';
 
 const { recette } = Astro.props as { recette: CollectionEntry<'recettes'> };
 const d = recette.data;
 const cat = getCategorie(d.categorie);
-// Texte cherchable : titre + tags, sans accents ni casse.
-const cherche = [d.titre, ...(d.tags ?? [])]
+// Texte cherchable : titre + tags + INGRÉDIENTS, sans accents ni casse.
+// Les ingrédients permettent le vrai réflexe du mardi soir : « qu'est-ce que
+// je fais avec le poivron qui traîne ».
+const sections = extraireSections(recette.body ?? '');
+const cherche = [d.titre, ...(d.tags ?? []), ...sections.ingredients]
   .join(' ')
   .normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '')
@@ -17,10 +25,15 @@ const cherche = [d.titre, ...(d.tags ?? [])]
 ---
 
 <li
+  class="item-recette"
   data-recette
+  data-slug={recette.id}
+  data-titre={d.titre}
   data-temps={d.temps_total}
   data-cout={d.cout_par_portion}
   data-enfants={String(d.aime_des_enfants)}
+  data-congele={String(d.se_congele)}
+  data-date={d.date_publication.valueOf()}
   data-categorie={cat.slug}
   data-cherche={cherche}
 >
@@ -35,4 +48,17 @@ const cherche = [d.titre, ...(d.tags ?? [])]
     aime_des_enfants={d.aime_des_enfants}
     se_congele={d.se_congele}
   />
+
+  <ActionsRecette slug={recette.id} titre={d.titre} portions={d.portions} />
 </li>
+
+<style>
+  .item-recette {
+    position: relative;
+  }
+  /* On réserve la bande du bas de la carte pour les pastilles d'action :
+     elles ne recouvrent ainsi jamais les repères « Aimé des enfants ». */
+  .item-recette :global(.carte) {
+    padding-bottom: 60px;
+  }
+</style>

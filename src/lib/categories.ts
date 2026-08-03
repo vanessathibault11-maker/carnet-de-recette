@@ -4,7 +4,14 @@
 // Tout le site lit d'ici — ne dupliquez pas ces valeurs ailleurs.
 // -----------------------------------------------------------------------------
 
-export type CategorieKey = 'poulet' | 'poisson' | 'vege' | 'dessert' | 'boeuf';
+export type CategorieKey =
+  | 'poulet'
+  | 'poisson'
+  | 'vege'
+  | 'dessert'
+  | 'boeuf'
+  | 'collation'
+  | 'dejeuner';
 
 export interface Categorie {
   key: CategorieKey;
@@ -55,6 +62,22 @@ export const CATEGORIES: Categorie[] = [
     couleur: '#2E5E3A',
     texteSur: '#FFFFFF',
     illustrationParDefaut: 'vege',
+  },
+  {
+    key: 'dejeuner',
+    label: 'Déjeuners',
+    slug: 'dejeuners',
+    couleur: '#7A5F3F',
+    texteSur: '#FFFFFF',
+    illustrationParDefaut: 'dejeuner',
+  },
+  {
+    key: 'collation',
+    label: 'Collations',
+    slug: 'collations',
+    couleur: '#64753E',
+    texteSur: '#FFFFFF',
+    illustrationParDefaut: 'collation',
   },
   {
     key: 'dessert',
@@ -151,6 +174,25 @@ export const ILLUSTRATIONS: Record<string, string> = {
     '<path d="M80 142 q40 20 80 0" fill="none" stroke="#000000" stroke-opacity="0.08" stroke-width="4"/>' +
     '<line x1="120" y1="106" x2="120" y2="86" stroke="currentColor" stroke-width="5"/>' +
     '<circle cx="120" cy="78" r="6" fill="currentColor"/>' +
+    '</g>',
+  // Œuf au plat + rôtie beurrée (déjeuners).
+  dejeuner:
+    PLATE +
+    '<g stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M54 170 v-40 a24 22 0 0 1 48 0 v40 z" fill="currentColor" fill-opacity="0.94"/>' +
+    '<rect x="66" y="134" width="22" height="15" rx="4" fill="#000000" fill-opacity="0.1"/>' +
+    '<ellipse cx="148" cy="142" rx="40" ry="27" fill="currentColor" fill-opacity="0.55"/>' +
+    '<circle cx="148" cy="138" r="15" fill="currentColor"/>' +
+    '<circle cx="143" cy="133" r="4" fill="#000000" fill-opacity="0.09"/>' +
+    '</g>',
+  // Pomme croquante (collations).
+  collation:
+    PLATE +
+    '<g stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M120 104 c-18 -16 -46 -7 -46 21 c0 27 20 47 32 47 c7 0 9 -4 14 -4 s7 4 14 4 c12 0 32 -20 32 -47 c0 -28 -28 -37 -46 -21 z" fill="currentColor" fill-opacity="0.94"/>' +
+    '<path d="M120 104 v-18" stroke="currentColor" stroke-width="5" fill="none"/>' +
+    '<path d="M122 90 q17 -12 27 2 q-17 12 -27 -2 z" fill="currentColor" fill-opacity="0.7"/>' +
+    '<path d="M94 132 a22 22 0 0 1 13 -11" stroke="#000000" stroke-opacity="0.1" stroke-width="6" fill="none"/>' +
     '</g>',
   // Bol de pâtes avec fourchette.
   pates:

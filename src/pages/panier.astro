@@ -1,0 +1,552 @@
+---
+// Panier -> liste d'épicerie. Le site reste 100 % statique : la page embarque
+// les ingrédients de TOUTES les recettes (quelques kilo-octets), et le
+// navigateur ne garde que celles que tu as cochées. Rien ne part sur un
+// serveur, aucun compte requis.
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { extraireSections } from '../lib/recetteSchema';
+import { getCategorie } from '../lib/categories';
+
+const recettes = await getCollection('recettes');
+const donnees = recettes.map((r) => ({
+  slug: r.id,
+  titre: r.data.titre,
+  portions: r.data.portions,
+  temps_total: r.data.temps_total,
+  cout_par_portion: r.data.cout_par_portion,
+  categorie: getCategorie(r.data.categorie).label,
+  ingredients: extraireSections(r.body ?? '').ingredients,
+}));
+---
+
+<BaseLayout
+  titre="Ma liste d'épicerie"
+  description="Choisis tes recettes de la semaine et obtiens une liste d'épicerie combinée, classée par rayon, avec les quantités ajustées au nombre de portions."
+  noindex
+>
+  <section class="section">
+    <div class="contenu panier">
+      <header class="tete">
+        <p class="mono surtitre">Le carnet</p>
+        <h1>Ma liste d'épicerie</h1>
+        <p class="tete__intro">
+          Les recettes que tu as mises de côté, leurs ingrédients additionnés et
+          classés par rayon. Ajuste les portions : les quantités suivent.
+        </p>
+      </header>
+
+      <!-- Vide -->
+      <div class="vide" data-vide hidden>
+        <p>Ta liste est vide pour l'instant.</p>
+        <p class="vide__aide">
+          Sur une recette, touche l'icône de panier pour l'ajouter ici.
+        </p>
+        <a href="/recettes/" class="bouton bouton--plein">Parcourir les recettes</a>
+      </div>
+
+      <div class="panier__corps" data-corps hidden>
+        <!-- Recettes choisies -->
+        <section class="bloc" aria-labelledby="t-choisies">
+          <div class="bloc__tete">
+            <h2 id="t-choisies">Recettes choisies</h2>
+            <button type="button" class="lien-action" data-vider>Tout retirer</button>
+          </div>
+          <ul class="choisies" data-choisies role="list"></ul>
+          <p class="cout-total mono" data-cout-total></p>
+        </section>
+
+        <!-- Liste d'épicerie -->
+        <section class="bloc" aria-labelledby="t-liste">
+          <div class="bloc__tete">
+            <h2 id="t-liste">La liste</h2>
+            <div class="bloc__actions">
+              <button type="button" class="bouton bouton--ligne" data-copier>
+                Copier la liste
+              </button>
+              <button type="button" class="bouton bouton--ligne" data-imprimer>
+                Imprimer
+              </button>
+            </div>
+          </div>
+          <p class="astuce mono" data-etat-copie role="status" aria-live="polite"></p>
+          <div class="rayons" data-rayons></div>
+          <p class="avis mono">
+            Quantités additionnées automatiquement · vérifie ton garde-manger
+            avant de partir
+          </p>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <script type="application/json" id="donnees-recettes" set:html={JSON.stringify(donnees)} />
+</BaseLayout>
+
+<style>
+  .tete {
+    margin-bottom: 30px;
+  }
+  .surtitre {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    color: var(--terracotta-fonce);
+    margin: 0 0 8px;
+  }
+  .tete__intro {
+    max-width: 56ch;
+    color: var(--gris-texte);
+  }
+
+  .vide {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: var(--rayon);
+    padding: 32px;
+  }
+  .vide p {
+    margin: 0;
+  }
+  .vide__aide {
+    color: var(--gris-texte);
+  }
+
+  .panier__corps {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+    gap: 32px;
+    align-items: start;
+  }
+  .bloc {
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: var(--rayon);
+    padding: 24px;
+  }
+  .bloc__tete {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .bloc__tete h2 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+  .bloc__actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .bloc__actions .bouton {
+    font-size: 13px;
+    padding: 8px 14px;
+  }
+  .lien-action {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--terracotta-fonce);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    padding: 0;
+  }
+
+  /* Recettes choisies */
+  .choisies {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .choisie {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px 14px;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--bordure);
+  }
+  .choisie:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .choisie__titre {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    color: var(--vert);
+    text-decoration: none;
+    line-height: 1.25;
+  }
+  .choisie__titre:hover {
+    text-decoration: underline;
+  }
+  .choisie__meta {
+    grid-column: 1;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--gris-texte);
+    margin: 0;
+  }
+  .choisie__reglage {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pas {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--bordure);
+    border-radius: 999px;
+    padding: 2px;
+  }
+  .pas button {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: var(--creme);
+    color: var(--charbon);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .pas button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .pas span {
+    font-family: var(--mono);
+    font-size: 14px;
+    min-width: 2ch;
+    text-align: center;
+  }
+  .retirer {
+    border: none;
+    background: none;
+    color: var(--gris-texte);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+  }
+  .retirer:hover {
+    color: var(--terracotta-fonce);
+  }
+  .cout-total {
+    margin: 18px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--bordure);
+    font-size: 13px;
+    color: var(--gris-texte);
+  }
+
+  /* Liste par rayon */
+  .rayon {
+    margin-bottom: 22px;
+  }
+  .rayon:last-child {
+    margin-bottom: 0;
+  }
+  .rayon__titre {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--terracotta-fonce);
+    margin: 0 0 8px;
+  }
+  .rayon__liste {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .article label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 7px 8px;
+    border-radius: var(--rayon-sm);
+    cursor: pointer;
+  }
+  .article label:hover {
+    background: #f5efe4;
+  }
+  .article input {
+    margin-top: 4px;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--vert);
+    flex-shrink: 0;
+  }
+  .article__txt {
+    line-height: 1.45;
+  }
+  .article__source {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gris-texte);
+  }
+  .article.coche .article__txt {
+    text-decoration: line-through;
+    color: var(--gris-texte);
+    opacity: 0.7;
+  }
+  .astuce,
+  .avis {
+    font-size: 12px;
+    color: var(--gris-texte);
+  }
+  .astuce {
+    margin: -8px 0 12px;
+    min-height: 1em;
+  }
+  .avis {
+    margin: 18px 0 0;
+  }
+
+  @media (max-width: 900px) {
+    .panier__corps {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Impression : on ne veut que la liste, sur du papier. */
+  @media print {
+    .tete__intro,
+    .bloc__actions,
+    .lien-action,
+    .choisie__reglage,
+    .astuce {
+      display: none !important;
+    }
+    .bloc {
+      border: none;
+      padding: 0;
+      margin-bottom: 24px;
+    }
+    .panier__corps {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .article label:hover {
+      background: none;
+    }
+  }
+</style>
+
+<script>
+  import {
+    lirePanier,
+    reglerPortions,
+    basculerPanier,
+    viderPanier,
+    EVENEMENT_MAJ,
+  } from '../lib/carnetLocal';
+  import { construireListe, listeEnTexte } from '../lib/epicerie';
+  import type { RecetteEpicerie } from '../lib/epicerie';
+  import { formaterCout } from '../lib/format';
+
+  interface RecetteDonnee extends RecetteEpicerie {
+    temps_total: number;
+    cout_par_portion: number;
+    categorie: string;
+  }
+
+  const balise = document.getElementById('donnees-recettes');
+  let toutes: RecetteDonnee[] = [];
+  try {
+    toutes = JSON.parse(balise?.textContent ?? '[]');
+  } catch {
+    toutes = [];
+  }
+  const parSlug = new Map(toutes.map((r) => [r.slug, r]));
+
+  const zoneVide = document.querySelector<HTMLElement>('[data-vide]');
+  const corps = document.querySelector<HTMLElement>('[data-corps]');
+  const listeChoisies = document.querySelector<HTMLElement>('[data-choisies]');
+  const zoneRayons = document.querySelector<HTMLElement>('[data-rayons]');
+  const coutTotal = document.querySelector<HTMLElement>('[data-cout-total]');
+  const etatCopie = document.querySelector<HTMLElement>('[data-etat-copie]');
+
+  // Cases cochées de la liste d'épicerie — mémorisées par clé d'article, pas
+  // par position : la liste peut se réordonner sans perdre les coches.
+  const CLE_COCHES = 'carnet:epicerie-coches';
+  const lireCoches = (): Set<string> => {
+    try {
+      const v = JSON.parse(localStorage.getItem(CLE_COCHES) ?? '[]');
+      return new Set(Array.isArray(v) ? v : []);
+    } catch {
+      return new Set();
+    }
+  };
+  const ecrireCoches = (s: Set<string>) => {
+    try {
+      localStorage.setItem(CLE_COCHES, JSON.stringify([...s]));
+    } catch {
+      /* stockage indisponible */
+    }
+  };
+
+  let dernierTexte = '';
+
+  const rendre = () => {
+    const panier = lirePanier();
+    const slugs = Object.keys(panier).filter((s) => parSlug.has(s));
+    const vide = slugs.length === 0;
+
+    if (zoneVide) zoneVide.hidden = !vide;
+    if (corps) corps.hidden = vide;
+    if (vide) return;
+
+    // -- Recettes choisies --
+    if (listeChoisies) {
+      listeChoisies.replaceChildren();
+      let total = 0;
+
+      for (const slug of slugs) {
+        const r = parSlug.get(slug)!;
+        const portions = panier[slug];
+        total += r.cout_par_portion * portions;
+
+        const li = document.createElement('li');
+        li.className = 'choisie';
+        li.innerHTML = `
+          <a class="choisie__titre" href="/recettes/${slug}/"></a>
+          <p class="choisie__meta"></p>
+          <div class="choisie__reglage">
+            <span class="pas">
+              <button type="button" data-moins aria-label="Réduire les portions">−</button>
+              <span data-valeur></span>
+              <button type="button" data-plus aria-label="Augmenter les portions">+</button>
+            </span>
+            <button type="button" class="retirer" data-retirer aria-label="Retirer cette recette">×</button>
+          </div>`;
+
+        li.querySelector('.choisie__titre')!.textContent = r.titre;
+        li.querySelector('.choisie__meta')!.textContent =
+          `${r.categorie} · ${r.temps_total} min · ${formaterCout(r.cout_par_portion * portions)}`;
+        li.querySelector('[data-valeur]')!.textContent = `${portions}`;
+        (li.querySelector('[data-moins]') as HTMLButtonElement).disabled = portions <= 1;
+
+        li.querySelector('[data-moins]')!.addEventListener('click', () =>
+          reglerPortions(slug, portions - 1)
+        );
+        li.querySelector('[data-plus]')!.addEventListener('click', () =>
+          reglerPortions(slug, portions + 1)
+        );
+        li.querySelector('[data-retirer]')!.addEventListener('click', () =>
+          basculerPanier(slug, portions)
+        );
+
+        listeChoisies.appendChild(li);
+      }
+
+      if (coutTotal) {
+        coutTotal.textContent = `Coût total approximatif · ${formaterCout(total)}`;
+      }
+    }
+
+    // -- Liste d'épicerie --
+    const choisies = slugs.map((s) => parSlug.get(s)!);
+    const rayons = construireListe(choisies, panier);
+    dernierTexte = listeEnTexte(rayons);
+    const coches = lireCoches();
+
+    if (zoneRayons) {
+      zoneRayons.replaceChildren();
+      for (const groupe of rayons) {
+        const section = document.createElement('div');
+        section.className = 'rayon';
+        const titre = document.createElement('p');
+        titre.className = 'rayon__titre';
+        titre.textContent = groupe.rayon;
+        const ul = document.createElement('ul');
+        ul.className = 'rayon__liste';
+        ul.setAttribute('role', 'list');
+
+        for (const ligne of groupe.lignes) {
+          const li = document.createElement('li');
+          li.className = 'article';
+          const label = document.createElement('label');
+          const input = document.createElement('input');
+          input.type = 'checkbox';
+          input.checked = coches.has(ligne.cle);
+          if (input.checked) li.classList.add('coche');
+
+          const span = document.createElement('span');
+          span.className = 'article__txt';
+          span.textContent = ligne.texte;
+          if (ligne.precisions.length) {
+            span.textContent += ` (${ligne.precisions.join(', ')})`;
+          }
+          if (ligne.recettes.length > 1) {
+            const src = document.createElement('span');
+            src.className = 'article__source';
+            src.textContent = ligne.recettes.join(' · ');
+            span.appendChild(src);
+          }
+
+          input.addEventListener('change', () => {
+            const actuels = lireCoches();
+            if (input.checked) actuels.add(ligne.cle);
+            else actuels.delete(ligne.cle);
+            ecrireCoches(actuels);
+            li.classList.toggle('coche', input.checked);
+          });
+
+          label.append(input, span);
+          li.appendChild(label);
+          ul.appendChild(li);
+        }
+
+        section.append(titre, ul);
+        zoneRayons.appendChild(section);
+      }
+    }
+  };
+
+  document.querySelector('[data-vider]')?.addEventListener('click', () => {
+    viderPanier();
+  });
+
+  document.querySelector('[data-imprimer]')?.addEventListener('click', () => {
+    window.print();
+  });
+
+  document.querySelector('[data-copier]')?.addEventListener('click', async () => {
+    if (!etatCopie) return;
+    try {
+      await navigator.clipboard.writeText(dernierTexte);
+      etatCopie.textContent = 'Liste copiée — colle-la où tu veux.';
+    } catch {
+      etatCopie.textContent = "La copie automatique a été refusée par le navigateur.";
+    }
+    setTimeout(() => {
+      etatCopie.textContent = '';
+    }, 4000);
+  });
+
+  window.addEventListener(EVENEMENT_MAJ, rendre);
+  rendre();
+</script>

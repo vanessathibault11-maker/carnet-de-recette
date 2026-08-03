@@ -1,39 +1,43 @@
 # Visuels des recettes
 
-Deux niveaux, tous en **SVG maison** (jamais de photo, jamais d'image IA,
-jamais de dégradé).
+**Un seul niveau** : la banque d'icônes. Jamais de photo, jamais d'image IA,
+jamais de dégradé.
 
-## `src/visuels/<slug>.svg` — le visuel d'UNE recette
+> **Décision du 2026-08-03** — les visuels autonomes `<slug>.svg` (grandes
+> scènes 400 × 300 avec fond de catégorie) ont été retirés : le rendu n'était
+> pas au niveau du reste du site, et le code ne les affichait pas. Le site
+> montre l'**emblème de catégorie**, et lui seul. Pour différencier une
+> recette, on change son **icône**, pas son fond.
 
-Un **SVG autonome** (fond de catégorie compris) dont le nom = le slug de la
-recette (= nom du fichier `.md`). Exemple : `sauce-a-spaghetti-maison.md` →
-`sauce-a-spaghetti-maison.svg`.
+## `src/visuels/icones/` — la banque
 
-- S'il existe, la page-recette l'affiche tel quel (héros + carte).
-- S'il n'existe pas, le site retombe automatiquement sur l'illustration de la
-  **catégorie** (banque intégrée à `src/lib/categories.ts`). Rien à faire.
-- Pour pointer vers un fichier au nom différent du slug : champ `visuel:` dans
-  le frontmatter de la recette.
+Des icônes SVG nommées (`poulet`, `poisson`, `vege`, `dessert`, `casserole`,
+`pates`, `riz`, `tomate`, `brocoli`, `oeuf`, `lentilles`, `poele`, `dejeuner`,
+`collation`…). Chaque recette en affiche une, dans un disque à la couleur de sa
+catégorie — le même emblème sur la carte et sur la page-recette.
 
-C'est ici que le skill **`generateur-visuel-recette`** dépose ses fichiers.
+**Quelle icône ?** Par défaut celle de la catégorie (`illustrationParDefaut`
+dans `src/lib/categories.ts`). Une recette peut en choisir une autre avec le
+champ `illustration:` de son frontmatter.
 
-## `src/visuels/icones/` — la banque de primitives réutilisables
+## Style à respecter (identique partout)
 
-Des icônes SVG nommées (`poulet`, `poisson`, `lentilles`, `tomate`, `brocoli`,
-`oeuf`, `casserole`, `poele`, `pates`, `riz`…) que le skill assemble pour
-composer un `<slug>.svg` cohérent d'une recette à l'autre.
-
-Style à respecter (identique partout) :
-
-- **Palette** : crème `#FBF7F0`, charbon `#2B2B2B`. Les primitives dessinent en
-  `currentColor` → elles se teintent selon le fond (encre claire sur fond foncé,
-  charbon sur fond pâle).
-- **Trait** ~2 px, `stroke-linecap="round"`, formes arrondies, aplats.
-- **Zéro** dégradé, ombre réaliste, texture.
+- `viewBox="0 0 100 100"`, `fill="none"`, `stroke="currentColor"`,
+  `stroke-width="3"`, `stroke-linecap="round"`, `stroke-linejoin="round"`.
+- **`currentColor` uniquement.** L'icône se teinte selon le fond de catégorie
+  (encre claire sur fond foncé, charbon sur fond pâle). Coder une couleur en dur
+  casserait le contraste sur la moitié des catégories.
+- Formes arrondies, quelques traits, beaucoup d'air. **Zéro** dégradé, ombre
+  réaliste ou texture.
 - `<title>` obligatoire (accessibilité).
-
-Fond de catégorie (pour les `<slug>.svg` autonomes) :
-Poulet `#C8674B` · Poisson `#3E7C7B` · Végé `#2E5E3A` · Dessert `#E0A93B` ·
-Soupers 30 min / Autre `#E5DFD5`.
+- Les aplats se font avec `fill="currentColor" stroke="none"`, avec parcimonie.
 
 Enrichir la banque : **oui**. Changer le style : **jamais**.
+
+## Ajouter une icône
+
+1. Dépose `mon-icone.svg` ici, dans le style ci-dessus.
+2. Réfère-la depuis une recette (`illustration: mon-icone`) ou depuis une
+   catégorie (`illustrationParDefaut` dans `src/lib/categories.ts`).
+
+Rien d'autre : le site la charge au prochain build.

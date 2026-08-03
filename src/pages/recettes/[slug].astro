@@ -4,6 +4,8 @@ import type { CollectionEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import VisuelRecette from '../../components/VisuelRecette.astro';
 import FaitsRapides from '../../components/FaitsRapides.astro';
+import ActionsRecette from '../../components/ActionsRecette.astro';
+import NotePerso from '../../components/NotePerso.astro';
 import { getCategorie } from '../../lib/categories';
 import { formaterCout, inlineGras } from '../../lib/format';
 import { baliserIngredient } from '../../lib/quantites';
@@ -67,6 +69,13 @@ const jsonLd = construireRecipeJsonLd(d, sections, urlPage);
         cout_par_portion={d.cout_par_portion}
         aime_des_enfants={d.aime_des_enfants}
         se_congele={d.se_congele}
+      />
+
+      <ActionsRecette
+        slug={recette.id}
+        titre={d.titre}
+        portions={d.portions}
+        variante="page"
       />
 
       <!-- Mode cuisine : garde l'écran allumé (révélé par JS si l'appareil le
@@ -138,6 +147,8 @@ const jsonLd = construireRecipeJsonLd(d, sections, urlPage);
           </section>
         )
       }
+
+      <NotePerso slug={recette.id} />
     </div>
   </article>
 </BaseLayout>

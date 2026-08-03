@@ -49,9 +49,24 @@ const avecCategories = categories.length > 1;
       </select>
     </div>
 
+    <div class="filtre">
+      <label for="f-tri">Trier par</label>
+      <select id="f-tri" data-f-tri>
+        <option value="temps">Temps (plus court)</option>
+        <option value="cout">Coût (moins cher)</option>
+        <option value="recent">Ajout récent</option>
+        <option value="alpha">Titre (A → Z)</option>
+      </select>
+    </div>
+
     <div class="filtre filtre--case">
       <input type="checkbox" id="f-enfants" data-f-enfants />
       <label for="f-enfants">Aimé des enfants</label>
+    </div>
+
+    <div class="filtre filtre--case">
+      <input type="checkbox" id="f-congele" data-f-congele />
+      <label for="f-congele">Se congèle</label>
     </div>
 
     <p class="filtres__compte" data-compte aria-live="polite">
@@ -228,7 +243,10 @@ const avecCategories = categories.length > 1;
   if (racine) {
     const selTemps = racine.querySelector('[data-f-temps]') as HTMLSelectElement | null;
     const selCout = racine.querySelector('[data-f-cout]') as HTMLSelectElement | null;
+    const selTri = racine.querySelector('[data-f-tri]') as HTMLSelectElement | null;
     const caseEnfants = racine.querySelector('[data-f-enfants]') as HTMLInputElement | null;
+    const caseCongele = racine.querySelector('[data-f-congele]') as HTMLInputElement | null;
+    const grille = racine.querySelector('.filtrable__grille') as HTMLElement | null;
     const champRecherche = racine.querySelector('[data-f-recherche]') as HTMLInputElement | null;
     const compte = racine.querySelector('[data-compte]') as HTMLElement | null;
     const vide = racine.querySelector('[data-vide]') as HTMLElement | null;
@@ -242,10 +260,30 @@ const avecCategories = categories.length > 1;
     const sansAccents = (s: string) =>
       s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
+    // Le tri réordonne les <li> en place. On ne le refait qu'au changement de
+    // critère : réinsérer les nœuds à chaque frappe de recherche ferait sautiller
+    // la grille sous les doigts.
+    const trier = () => {
+      if (!grille) return;
+      const mode = selTri?.value ?? 'temps';
+      const ordonnes = [...items].sort((a, b) => {
+        if (mode === 'cout') return Number(a.dataset.cout) - Number(b.dataset.cout);
+        if (mode === 'recent') return Number(b.dataset.date) - Number(a.dataset.date);
+        if (mode === 'alpha') {
+          return (a.dataset.titre ?? '').localeCompare(b.dataset.titre ?? '', 'fr');
+        }
+        return Number(a.dataset.temps) - Number(b.dataset.temps);
+      });
+      const fragment = document.createDocumentFragment();
+      for (const el of ordonnes) fragment.appendChild(el);
+      grille.appendChild(fragment);
+    };
+
     const appliquer = () => {
       const tMax = Number(selTemps?.value ?? 0);
       const cMax = Number(selCout?.value ?? 0);
       const enfants = Boolean(caseEnfants?.checked);
+      const congele = Boolean(caseCongele?.checked);
       const terme = sansAccents(champRecherche?.value ?? '');
       let visibles = 0;
 
@@ -253,12 +291,14 @@ const avecCategories = categories.length > 1;
         const temps = Number(el.dataset.temps ?? 0);
         const cout = Number(el.dataset.cout ?? 0);
         const aimeEnfants = el.dataset.enfants === 'true';
+        const seCongele = el.dataset.congele === 'true';
         const cat = el.dataset.categorie ?? '';
         const cherche = el.dataset.cherche ?? '';
         const ok =
           (tMax === 0 || temps <= tMax) &&
           (cMax === 0 || cout <= cMax) &&
           (!enfants || aimeEnfants) &&
+          (!congele || seCongele) &&
           (catActive === '' || cat === catActive) &&
           (terme === '' || cherche.includes(terme));
         el.hidden = !ok;
@@ -269,7 +309,13 @@ const avecCategories = categories.length > 1;
       if (vide) vide.hidden = visibles !== 0;
 
       const actif =
-        tMax !== 0 || cMax !== 0 || enfants || catActive !== '' || terme !== '';
+        tMax !== 0 ||
+        cMax !== 0 ||
+        enfants ||
+        congele ||
+        catActive !== '' ||
+        terme !== '' ||
+        (selTri?.value ?? 'temps') !== 'temps';
       if (resetInline) resetInline.hidden = !actif;
     };
 
@@ -284,17 +330,25 @@ const avecCategories = categories.length > 1;
     const reinitialiser = () => {
       if (selTemps) selTemps.value = '0';
       if (selCout) selCout.value = '0';
+      if (selTri) selTri.value = 'temps';
       if (caseEnfants) caseEnfants.checked = false;
+      if (caseCongele) caseCongele.checked = false;
       if (champRecherche) champRecherche.value = '';
       catActive = '';
       majPuces();
+      trier();
       appliquer();
     };
 
     selTemps?.addEventListener('change', appliquer);
     selCout?.addEventListener('change', appliquer);
     caseEnfants?.addEventListener('change', appliquer);
+    caseCongele?.addEventListener('change', appliquer);
     champRecherche?.addEventListener('input', appliquer);
+    selTri?.addEventListener('change', () => {
+      trier();
+      appliquer();
+    });
     puces.forEach((p) =>
       p.addEventListener('click', () => {
         catActive = p.dataset.catPuce ?? '';

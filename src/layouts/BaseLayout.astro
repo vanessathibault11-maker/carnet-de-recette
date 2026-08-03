@@ -19,9 +19,11 @@ export interface Props {
   jsonLd?: string;
   /** Chemin canonique optionnel (par défaut, l'URL courante). */
   canonical?: string;
+  /** Page personnelle (panier, carnet) : rien à indexer, le contenu est local. */
+  noindex?: boolean;
 }
 
-const { titre, description, jsonLd, canonical } = Astro.props;
+const { titre, description, jsonLd, canonical, noindex } = Astro.props;
 const urlCanonique = new URL(canonical ?? Astro.url.pathname, Astro.site);
 const titreComplet = titre.includes('Le carnet de recettes')
   ? titre
@@ -36,6 +38,7 @@ const titreComplet = titre.includes('Le carnet de recettes')
     <title>{titreComplet}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={urlCanonique.href} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
 
     <!-- Réseaux sociaux -->
     <meta property="og:type" content="website" />

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <title>Œuf au plat et rôtie</title>
+  <path d="M18 76V48a14 13 0 0 1 28 0v28z" />
+  <path d="M26 58h12" opacity="0.5" />
+  <ellipse cx="68" cy="60" rx="19" ry="14" />
+  <circle cx="68" cy="58" r="6.5" fill="currentColor" stroke="none" />
+</svg>

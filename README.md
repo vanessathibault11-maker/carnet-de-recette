@@ -45,7 +45,7 @@ Copie une recette existante et modifie l'entête (le « moule ») :
 ```yaml
 ---
 titre: Mon nouveau souper
-categorie: Poulet          # Poulet | Poisson | Végé | Dessert | Soupers 30 min
+categorie: Poulet          # Poulet | Bœuf & porc | Poisson | Végé | Déjeuners | Collations | Dessert
 temps_total: 40            # minutes — affiché en gros
 temps_prep: 15
 temps_cuisson: 25
@@ -56,7 +56,7 @@ se_congele: false
 tags:
   - rapide
   - une seule plaque
-illustration: poulet       # optionnel : poulet, poisson, vege, casserole, dessert, pates
+illustration: poulet       # optionnel : poulet, poisson, vege, casserole, dessert, pates, dejeuner, collation
 macros:
   calories: 400
   proteines: 30
@@ -84,19 +84,24 @@ date_publication: 2026-07-22
 
 **Points importants :**
 
-- La `categorie` doit être l'une des cinq valeurs listées (sinon le build
+- La `categorie` doit être l'une des sept valeurs listées (sinon le build
   s'arrête avec un message clair). Les couleurs et l'illustration s'appliquent
   automatiquement selon la catégorie.
+- **Ajouter une catégorie** se fait à deux endroits, et seulement deux :
+  1. une entrée dans `CATEGORIES` de `src/lib/categories.ts` (libellé, slug,
+     couleur, illustration par défaut) ;
+  2. le même libellé dans l'énumération `categorie` de `src/content.config.ts`.
+
+  La page de catégorie, la couleur, la puce de filtre et le plan du site
+  suivent tout seuls au prochain build. Pense à déposer l'icône correspondante
+  dans `src/visuels/icones/`.
 - Mets un **chiffre au début** de chaque ingrédient (`2 carottes`, `1,5 tasse`,
   `1/2 c. à thé`) : le site ajuste les quantités quand on change les portions.
-- Le **visuel est généré** (illustration SVG maison), jamais de photo. Deux cas :
-  - **Rien à faire** : sans visuel dédié, le site affiche automatiquement
-    l'illustration de la catégorie (couleur de fond + dessin). C'est le défaut.
-  - **Visuel dédié** : dépose un SVG au nom de la recette dans `src/visuels/`
-    (ex. `mon-souper.md` → `src/visuels/mon-souper.svg`) et il remplace le
-    défaut. C'est là que le skill *generateur-visuel-recette* dépose ses
-    fichiers, en réutilisant la banque d'icônes `src/visuels/icones/`.
-    Voir [`src/visuels/README.md`](src/visuels/README.md).
+- Le **visuel se génère tout seul**, jamais de photo : un emblème rond à la
+  couleur de la catégorie, avec son icône. **Rien à faire** dans le cas normal.
+  Pour changer l'icône d'une recette en particulier, mets le champ
+  `illustration:` (un nom de fichier de `src/visuels/icones/`).
+  Voir [`src/visuels/README.md`](src/visuels/README.md).
 - Le balisage Schema.org, le plan `llms.txt` et le plan du site se mettent à
   jour **tout seuls** à partir de tes fichiers.
 
@@ -119,7 +124,38 @@ tags:
 
 ---
 
-## 3. Déployer gratuitement sur Cloudflare Pages
+## 3. Les fonctions « perso » du site
+
+Trois choses vivent **dans le navigateur de la visiteuse**, jamais sur un
+serveur : aucun compte, aucune donnée personnelle collectée, rien à déclarer
+au titre de la Loi 25. La contrepartie assumée : vider le cache efface tout,
+d'où le bouton d'export.
+
+| Fonction | Où | Ce que ça fait |
+|----------|-----|----------------|
+| **Favoris** | cœur sur chaque carte et page-recette | épingle la recette dans `/mon-carnet/` |
+| **Ma note** | bas de chaque page-recette | note privée (« doubler la sauce ») |
+| **Ma liste** | icône panier + page `/panier/` | additionne les ingrédients des recettes choisies |
+
+La page `/panier/` fait le vrai travail : elle ajuste les quantités au nombre de
+portions voulu, **additionne les ingrédients identiques** entre les recettes et
+classe le tout par rayon d'épicerie. La liste se coche, se copie et s'imprime.
+
+Deux garde-fous à connaître :
+
+- La fusion n'a lieu que si le **nom ET l'unité** concordent. Dans le doute, on
+  garde deux lignes — une liste un peu longue est bénigne, une quantité fusionnée
+  à tort ne l'est pas.
+- Un ingrédient dont le rayon est inconnu tombe dans **« À vérifier »** plutôt que
+  d'être rangé au hasard. Pour le classer, ajoute un mot-clé dans `RAYONS`
+  (`src/lib/epicerie.ts`).
+
+Pour que la mise à l'échelle fonctionne, chaque ingrédient doit **commencer par
+un chiffre** (`2 carottes`, `1,5 tasse`, `1/2 c. à thé`).
+
+---
+
+## 4. Déployer gratuitement sur Cloudflare Pages
 
 Le site est prêt pour un déploiement automatique **gratuit**.
 
@@ -147,16 +183,16 @@ Une fois en ligne, tu peux remplacer l'adresse dans `astro.config.mjs`
 
 ---
 
-## 4. Où se trouve quoi
+## 5. Où se trouve quoi
 
 | Tu veux…                         | Va dans…                              |
 |----------------------------------|---------------------------------------|
 | Ajouter / éditer une recette     | `src/content/recettes/*.md`           |
 | Ajouter / éditer un article      | `src/content/blog/*.md`               |
-| Déposer le visuel d'une recette  | `src/visuels/<slug>.svg`              |
 | Enrichir la banque d'icônes      | `src/visuels/icones/*.svg`            |
-| Changer les couleurs/illustrations | `src/lib/categories.ts`             |
-| Changer le style global          | `src/styles/global.css`               |
+| Ajouter une catégorie / une couleur | `src/lib/categories.ts` + `src/content.config.ts` |
+| Corriger un rayon d'épicerie     | `src/lib/epicerie.ts`                 |
+| Changer le style global / l'impression | `src/styles/global.css`         |
 | Modifier une page                | `src/pages/…`                         |
 | Voir les idées futures           | `BACKLOG.md`                          |
 

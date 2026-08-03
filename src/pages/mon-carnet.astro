@@ -1,0 +1,268 @@
+---
+// « Mon carnet » : les recettes mises en favori et les notes perso.
+// Le site reste statique — la page rend TOUTES les cartes, puis le navigateur
+// n'affiche que celles qui sont en favori. Aucun compte, aucune donnée envoyée.
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ItemRecette from '../components/ItemRecette.astro';
+
+const recettes = (await getCollection('recettes')).sort((a, b) =>
+  a.data.titre.localeCompare(b.data.titre, 'fr')
+);
+const titres = Object.fromEntries(recettes.map((r) => [r.id, r.data.titre]));
+---
+
+<BaseLayout
+  titre="Mon carnet"
+  description="Tes recettes favorites et tes notes personnelles, gardées sur ton appareil."
+  noindex
+>
+  <section class="section">
+    <div class="contenu">
+      <header class="tete">
+        <p class="mono surtitre">Le carnet</p>
+        <h1>Mon carnet</h1>
+        <p class="tete__intro">
+          Tes favoris et tes notes. Tout est gardé sur cet appareil seulement —
+          pense à exporter une copie si tu changes de téléphone.
+        </p>
+      </header>
+
+      <!-- Favoris -->
+      <section class="bloc-carnet" aria-labelledby="t-favoris">
+        <h2 id="t-favoris">Mes favoris</h2>
+
+        <p class="vide-msg" data-favoris-vide hidden>
+          Aucun favori pour l'instant. Touche le cœur sur une recette pour
+          l'épingler ici. <a href="/recettes/">Voir les recettes</a>
+        </p>
+
+        <!-- Rendue masquée : le script révèle uniquement les favoris, ce qui
+             évite de faire clignoter toutes les recettes au chargement. -->
+        <ul class="grille-recettes" data-grille-favoris role="list" hidden>
+          {recettes.map((r) => <ItemRecette recette={r} />)}
+        </ul>
+
+        <noscript>
+          <p class="vide-msg">
+            Cette page a besoin de JavaScript : tes favoris sont gardés dans ton
+            navigateur. <a href="/recettes/">Voir toutes les recettes</a>
+          </p>
+        </noscript>
+      </section>
+
+      <!-- Notes -->
+      <section class="bloc-carnet" aria-labelledby="t-notes">
+        <h2 id="t-notes">Mes notes</h2>
+        <p class="vide-msg" data-notes-vide hidden>
+          Tu n'as pas encore écrit de note. Au bas de chaque recette, il y a un
+          espace « Ma note ».
+        </p>
+        <ul class="notes-liste" data-notes-liste role="list"></ul>
+      </section>
+
+      <!-- Sauvegarde -->
+      <section class="bloc-carnet bloc-carnet--sauvegarde" aria-labelledby="t-sauvegarde">
+        <h2 id="t-sauvegarde">Sauvegarde</h2>
+        <p class="sauvegarde__texte">
+          Vider le cache de ton navigateur efface tes favoris et tes notes.
+          Le fichier d'export est ton filet de sécurité.
+        </p>
+        <div class="sauvegarde__actions">
+          <button type="button" class="bouton bouton--plein" data-exporter>
+            Exporter mon carnet
+          </button>
+          <label class="bouton bouton--ligne">
+            Importer un fichier
+            <input type="file" accept="application/json,.json" data-importer hidden />
+          </label>
+        </div>
+        <p class="sauvegarde__etat mono" data-sauvegarde-etat role="status" aria-live="polite"></p>
+      </section>
+    </div>
+  </section>
+
+  <script type="application/json" id="titres-recettes" set:html={JSON.stringify(titres)} />
+</BaseLayout>
+
+<style>
+  .tete {
+    margin-bottom: 34px;
+  }
+  .surtitre {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    color: var(--terracotta-fonce);
+    margin: 0 0 8px;
+  }
+  .tete__intro {
+    max-width: 56ch;
+    color: var(--gris-texte);
+  }
+
+  .bloc-carnet {
+    margin-bottom: 48px;
+  }
+  .bloc-carnet h2 {
+    margin-bottom: 18px;
+  }
+  .vide-msg {
+    color: var(--gris-texte);
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: var(--rayon);
+    padding: 24px;
+    max-width: 60ch;
+  }
+
+  .notes-liste {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .note-carte {
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-left: 4px solid var(--ocre, var(--terracotta));
+    border-radius: var(--rayon);
+    padding: 18px 20px;
+  }
+  .note-carte a {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    color: var(--vert);
+    text-decoration: none;
+  }
+  .note-carte a:hover {
+    text-decoration: underline;
+  }
+  .note-carte p {
+    margin: 8px 0 0;
+    white-space: pre-wrap;
+    line-height: 1.55;
+  }
+
+  .bloc-carnet--sauvegarde {
+    background: var(--creme-pale);
+    border: 1px solid var(--bordure);
+    border-radius: var(--rayon);
+    padding: 26px;
+  }
+  .sauvegarde__texte {
+    max-width: 60ch;
+    color: var(--gris-texte);
+    margin-top: 0;
+  }
+  .sauvegarde__actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .sauvegarde__actions label {
+    cursor: pointer;
+  }
+  .sauvegarde__etat {
+    font-size: 13px;
+    color: var(--gris-texte);
+    margin: 12px 0 0;
+    min-height: 1em;
+  }
+</style>
+
+<script>
+  import { lireFavoris, lireNotes, exporterCarnet, importerCarnet, EVENEMENT_MAJ } from '../lib/carnetLocal';
+
+  const balise = document.getElementById('titres-recettes');
+  let titres: Record<string, string> = {};
+  try {
+    titres = JSON.parse(balise?.textContent ?? '{}');
+  } catch {
+    titres = {};
+  }
+
+  const grille = document.querySelector<HTMLElement>('[data-grille-favoris]');
+  const favVide = document.querySelector<HTMLElement>('[data-favoris-vide]');
+  const notesListe = document.querySelector<HTMLElement>('[data-notes-liste]');
+  const notesVide = document.querySelector<HTMLElement>('[data-notes-vide]');
+  const etat = document.querySelector<HTMLElement>('[data-sauvegarde-etat]');
+
+  const rendre = () => {
+    // -- Favoris : on masque tout ce qui n'est pas épinglé --
+    const favoris = new Set(lireFavoris());
+    let visibles = 0;
+    grille?.querySelectorAll<HTMLElement>('[data-recette]').forEach((li) => {
+      const ok = favoris.has(li.dataset.slug ?? '');
+      li.hidden = !ok;
+      if (ok) visibles++;
+    });
+    if (grille) grille.hidden = visibles === 0;
+    if (favVide) favVide.hidden = visibles > 0;
+
+    // -- Notes --
+    const notes = lireNotes();
+    const entrees = Object.entries(notes).filter(([slug]) => slug in titres);
+    if (notesVide) notesVide.hidden = entrees.length > 0;
+    if (notesListe) {
+      notesListe.replaceChildren();
+      for (const [slug, texte] of entrees) {
+        const li = document.createElement('li');
+        li.className = 'note-carte';
+        const lien = document.createElement('a');
+        lien.href = `/recettes/${slug}/`;
+        lien.textContent = titres[slug];
+        const p = document.createElement('p');
+        p.textContent = texte;
+        li.append(lien, p);
+        notesListe.appendChild(li);
+      }
+    }
+  };
+
+  // -- Export : un fichier .json téléchargé, lisible et ré-importable --
+  document.querySelector('[data-exporter]')?.addEventListener('click', () => {
+    const contenu = JSON.stringify(exporterCarnet(), null, 2);
+    const blob = new Blob([contenu], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const jour = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `mon-carnet-${jour}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    if (etat) etat.textContent = 'Fichier exporté.';
+  });
+
+  // -- Import : remplace le contenu local, avec confirmation explicite --
+  document
+    .querySelector<HTMLInputElement>('[data-importer]')
+    ?.addEventListener('change', async (e) => {
+      const input = e.currentTarget as HTMLInputElement;
+      const fichier = input.files?.[0];
+      if (!fichier) return;
+
+      const ok = window.confirm(
+        'Importer ce fichier remplacera tes favoris et tes notes actuels. Continuer ?'
+      );
+      if (!ok) {
+        input.value = '';
+        return;
+      }
+
+      const texte = await fichier.text();
+      const reussi = importerCarnet(texte);
+      if (etat) {
+        etat.textContent = reussi
+          ? 'Carnet importé.'
+          : "Ce fichier n'a pas le format attendu — rien n'a été modifié.";
+      }
+      input.value = '';
+    });
+
+  window.addEventListener(EVENEMENT_MAJ, rendre);
+  rendre();
+</script>

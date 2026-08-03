@@ -13,7 +13,15 @@ const recettes = defineCollection({
   schema: z.object({
     titre: z.string(),
     // Doit correspondre à un libellé de src/lib/categories.ts
-    categorie: z.enum(['Poulet', 'Bœuf & porc', 'Poisson', 'Végé', 'Dessert']),
+    categorie: z.enum([
+      'Poulet',
+      'Bœuf & porc',
+      'Poisson',
+      'Végé',
+      'Déjeuners',
+      'Collations',
+      'Dessert',
+    ]),
     temps_total: z.number().int().positive(), // minutes — critère nº1
     temps_prep: z.number().int().nonnegative(),
     temps_cuisson: z.number().int().nonnegative(),
@@ -22,13 +30,9 @@ const recettes = defineCollection({
     aime_des_enfants: z.boolean(),
     se_congele: z.boolean(),
     tags: z.array(z.string()).default([]),
-    // Id d'illustration de la banque (repli) ; défaut = illustration de la catégorie.
+    // Icône de la banque src/visuels/icones/ à afficher dans l'emblème.
+    // Optionnel : par défaut, celle de la catégorie (`illustrationParDefaut`).
     illustration: z.string().optional(),
-    // Chemin/nom d'un SVG autonome dans src/visuels/ (ex. "mon-plat" ou
-    // "mon-plat.svg"). Optionnel : par défaut, le site cherche déjà
-    // src/visuels/<slug>.svg (slug = nom du fichier .md). À NE remplir que pour
-    // pointer vers un fichier au nom différent du slug.
-    visuel: z.string().optional(),
     macros: z.object({
       calories: z.number().nonnegative(),
       proteines: z.number().nonnegative(),

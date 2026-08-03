@@ -185,3 +185,57 @@ input:focus-visible,
   white-space: nowrap;
   border: 0;
 }
+
+/* -----------------------------------------------------------------------------
+   Impression — une recette collée sur la porte du frigo, c'est un usage réel.
+   On retire la navigation, les boutons et les décors : il reste le contenu,
+   en noir sur blanc, sans gaspiller d'encre.
+----------------------------------------------------------------------------- */
+@media print {
+  :root {
+    --creme: #fff;
+    --creme-pale: #fff;
+    --blanc: #fff;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 12pt;
+  }
+
+  /* Chrome, pied de page, filtres et actions : hors sujet sur papier. */
+  .entete,
+  .pied,
+  .skip-link,
+  .filtres,
+  .puces,
+  .mode-cuisine,
+  .actions,
+  .hero__cta {
+    display: none !important;
+  }
+
+  a {
+    color: #000;
+    text-decoration: none;
+  }
+
+  h1,
+  h2,
+  h3 {
+    color: #000;
+    break-after: avoid;
+  }
+
+  /* Une étape ou un ingrédient ne doit pas se couper entre deux pages. */
+  li,
+  .etapes__item,
+  .article {
+    break-inside: avoid;
+  }
+
+  .recette__colonnes {
+    display: block;
+  }
+}
