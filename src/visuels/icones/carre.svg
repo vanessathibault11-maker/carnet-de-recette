@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <title>Carré dessert</title>
+  <desc>Un carré dessert à étages, coupé au couteau, au trait.</desc>
+  <path d="M24 34h52a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H24a4 4 0 0 1-4-4V38a4 4 0 0 1 4-4z" />
+  <path d="M20 46h60M20 58h60" opacity="0.75" />
+  <path d="M50 34v36" opacity="0.5" />
+  <path d="M34 26c4-5 10-5 14 0" opacity="0.6" />
+</svg>

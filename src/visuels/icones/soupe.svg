@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <title>Bol de soupe</title>
+  <desc>Un bol de soupe fumant, au trait.</desc>
+  <path d="M20 52h60a30 24 0 0 1-60 0z" />
+  <path d="M16 52h68" />
+  <path d="M42 30c5-6 0-10 0-12M58 30c5-6 0-10 0-12" opacity="0.75" />
+  <path d="M62 70h10" opacity="0.6" />
+</svg>
